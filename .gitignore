@@ -1,0 +1,11 @@
+# ── NO PUBLICAR ──────────────────────────────────────────────────
+# Brief, copy de trabajo, capturas de la web actual y notas internas.
+# Este repositorio es PÚBLICO (GitHub Pages lo exige en cuenta gratuita).
+_interno/
+
+# ── Sistema ──────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+node_modules/
+.claude/
+*.log
