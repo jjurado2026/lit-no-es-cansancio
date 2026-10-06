@@ -6,35 +6,35 @@
 
 @font-face {
   font-family: "LP2 Barlow";
-  src: url("../fonts/barlow-regular.woff2") format("woff2");
+  src: url('nw-lp2-barlow-400.woff2') format("woff2");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: "LP2 Barlow";
-  src: url("../fonts/barlow-medium.woff2") format("woff2");
+  src: url('nw-lp2-barlow-500.woff2') format("woff2");
   font-weight: 500;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: "LP2 Barlow";
-  src: url("../fonts/barlow-semibold.woff2") format("woff2");
+  src: url('nw-lp2-barlow-600.woff2') format("woff2");
   font-weight: 600;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: "LP2 Barlow";
-  src: url("../fonts/barlow-bold.woff2") format("woff2");
+  src: url('nw-lp2-barlow-700.woff2') format("woff2");
   font-weight: 700;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: "LP2 Clash";
-  src: url("../fonts/clash-display-var.woff2") format("woff2");
+  src: url('nw-lp2-clash.woff2') format("woff2");
   font-weight: 200 700;
   font-style: normal;
   font-display: swap;
@@ -1170,3 +1170,6 @@ html:has(.lp2) { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; scroll-
   .lp2 .lp2-press__track { animation: none; flex-wrap: wrap; justify-content: center; width: auto; row-gap: 18px; }
   .lp2 .lp2-press__track [aria-hidden="true"] { display: none; }
 }
+
+/* Shopify: la landing lleva su propio logo en el hero; se oculta la cabecera fija de las landings */
+.nw-lhead { display: none !important; }

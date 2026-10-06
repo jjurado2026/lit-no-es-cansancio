@@ -1,0 +1,3 @@
+# El paquete de Shopify se publica byte a byte: manifest.json lleva el sha256 de cada archivo
+prototype/shopify/** -text
+prototype/lit-landing-shopify.zip -text

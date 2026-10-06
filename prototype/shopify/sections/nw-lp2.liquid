@@ -1,231 +1,163 @@
-<!doctype html>
-<html lang="es">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>No es cansancio, es deshidratación — LIT</title>
-<meta name="description" content="Electrolitos sin azúcar: 500 mg de sodio, 150 mg de potasio y 60 mg de magnesio por sobre. Hecho en España. Desde 0,71 €/sobre con suscripción.">
-<meta name="theme-color" content="#1A1C22">
-<meta name="robots" content="noindex">
-<link rel="icon" href="assets/img/lit-logo.svg" type="image/svg+xml">
-<link rel="preload" href="assets/fonts/clash-display-var.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" as="image" href="assets/img/hero-poster-m.webp" media="(max-width: 767px)">
-<link rel="preload" as="image" href="assets/img/hero-poster-1600.webp" media="(min-width: 768px)">
-<link rel="preload" href="assets/fonts/barlow-regular.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/css/landing.css">
-<style>body { margin: 0; background: #F8F9F2; }</style>
-</head>
-<body>
+{%- comment -%}
+  LIT · Landing v2 «No es cansancio, es deshidratación».
+  Generado con tools/build_shopify.py desde el prototipo (repo jjurado2026/lit-no-es-cansancio).
+  Usar una sola vez por página. Todo cuelga de #lp2 con prefijo lp2- para no chocar con el tema.
+{%- endcomment -%}
+{{ 'nw-lp2.css' | asset_url | stylesheet_tag }}
+<link rel="preload" href="{{ 'nw-lp2-clash.woff2' | asset_url }}" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="{{ 'nw-lp2-barlow-400.woff2' | asset_url }}" as="font" type="font/woff2" crossorigin>
+{%- liquid
+  # Productos: se eligen en los ajustes de la sección (la plantilla trae los de hoy)
+  assign s = section.settings
+  assign p_l = s.p_sub_lemon
+  assign p_w = s.p_sub_watermelon
+  assign p_p = s.p_sub_peach
+  assign o_l = s.p_ot_lemon
+  assign o_w = s.p_ot_watermelon
+  assign o_p = s.p_ot_peach
+  assign k_s = s.p_pack_sub
+  assign k_o = s.p_pack_ot
+  assign lp2_disc_p = s.p_discovery
+
+  # Suscripción de 1 caja = la variante «30» (30 sobres) de cada producto de sabor
+  assign lp2_v_sl = p_l.variants | where: 'title', '30' | first
+  if lp2_v_sl == blank
+    assign lp2_v_sl = p_l.selected_or_first_available_variant
+  endif
+  assign lp2_v_sw = p_w.variants | where: 'title', '30' | first
+  if lp2_v_sw == blank
+    assign lp2_v_sw = p_w.selected_or_first_available_variant
+  endif
+  assign lp2_v_sp = p_p.variants | where: 'title', '30' | first
+  if lp2_v_sp == blank
+    assign lp2_v_sp = p_p.selected_or_first_available_variant
+  endif
+  assign lp2_v_ol = o_l.selected_or_first_available_variant
+  assign lp2_v_ow = o_w.selected_or_first_available_variant
+  assign lp2_v_op = o_p.selected_or_first_available_variant
+  assign lp2_v_ks = k_s.variants.first
+  assign lp2_v_ko = k_o.variants.first
+
+  # Precios en céntimos (los mismos para los tres sabores)
+  assign lp2_sub1_now = lp2_v_sl.price | default: 0
+  assign lp2_ot1_now = lp2_v_ol.price | default: 0
+  assign lp2_sub1_was = lp2_v_sl.compare_at_price | default: lp2_ot1_now
+  assign lp2_sub4_now = lp2_v_ks.price | default: 0
+  assign lp2_ot4_now = lp2_v_ko.price | default: 0
+  assign lp2_sub4_was = lp2_v_ks.compare_at_price | default: lp2_v_ko.compare_at_price | default: lp2_ot4_now
+  # €/sobre redondeado al céntimo con aritmética entera: (precio + unidades/2) / unidades
+  assign lp2_sub1_per = lp2_sub1_now | plus: 15 | divided_by: 30
+  assign lp2_ot1_per = lp2_ot1_now | plus: 15 | divided_by: 30
+  assign lp2_sub4_per = lp2_sub4_now | plus: 60 | divided_by: 120
+  assign lp2_from_per = lp2_sub4_per
+  assign lp2_sub4_save = lp2_sub4_was | minus: lp2_sub4_now
+  assign lp2_sub1_save_pct = 0
+  if lp2_sub1_was > 0
+    assign lp2_half = lp2_sub1_was | divided_by: 2
+    assign lp2_sub1_save_pct = lp2_sub1_was | minus: lp2_sub1_now | times: 100 | plus: lp2_half | divided_by: lp2_sub1_was
+  endif
+  assign lp2_disc = lp2_disc_p.price | default: 0
+
+  assign lp2_alts = 'Hidratación superior: chico bebiendo LIT al sol|La fórmula, sin rodeos: sodio, potasio y magnesio|Resultados del estudio a los 7 y a los 30 días|Caja abierta con 30 sobres de {n}|Información nutricional e ingredientes de {n}|Tu día no para, tú tampoco' | split: '|'
+
+  assign lp2_missing = ''
+  if p_l == blank or p_w == blank or p_p == blank or o_l == blank or o_w == blank or o_p == blank or k_s == blank or k_o == blank
+    assign lp2_missing = 'productos'
+  endif
+-%}
+{%- if request.design_mode and lp2_missing != blank -%}
+  <div style="padding:14px 18px;background:#FFF1B8;color:#4A3B00;font:600 14px/1.4 system-ui,sans-serif">LIT · Landing v2: falta elegir algún producto en los ajustes de la sección. La caja de compra no funcionará hasta completarlos.</div>
+{%- endif -%}
 <div class="lp2" id="lp2">
 <script>(function(r){var q=matchMedia('(prefers-reduced-motion: reduce)').matches||/[?&]ss\b/.test(location.search)||(window.Shopify&&window.Shopify.designMode);if(q)return;r.classList.add('lp2-anim');setTimeout(function(){if(!window.__lp2Anim)r.classList.remove('lp2-anim')},3500)})(document.currentScript.parentNode);</script>
 <script type="application/json" id="lp2-data">
 {
- "order": [
-  "lemon",
-  "watermelon",
-  "peach"
- ],
- "flavors": {
-  "lemon": {
-   "name": "Salty Lemon",
-   "short": "Lemon",
-   "color": "var(--lemon)",
-   "aroma": "limón",
-   "sub": "63887092154717",
-   "ot": "64634112213341",
-   "sachet": "assets/img/sobre-lemon.webp",
-   "gallery": [
-    {
-     "src": "assets/img/g-lemon-0-comp.webp",
-     "thumb": "assets/img/g-lemon-0-comp-t.webp",
-     "alt": "Caja y sobre de LIT Salty Lemon"
+  "order": ["lemon", "watermelon", "peach"],
+  "flavors": {
+    "lemon": {
+      "name": "Salty Lemon", "short": "Lemon", "color": "var(--lemon)", "aroma": "limón",
+      "sub": {{ lp2_v_sl.id | json }}, "ot": {{ lp2_v_ol.id | json }},
+      "sachet": {{ 'nw-lp2-sobre-lemon.webp' | asset_url | json }},
+      "gallery": [
+        {"src": {{ 'nw-lp2-g-lemon-0-comp.webp' | asset_url | json }}, "thumb": {{ 'nw-lp2-g-lemon-0-comp-t.webp' | asset_url | json }}, "alt": "Caja y sobre de LIT Salty Lemon"}
+        {%- comment -%} La 1.ª foto del producto muestra el sobre anterior (1000 mg de sodio): se salta {%- endcomment -%}
+        {%- for img in p_l.images offset: 1 limit: 6 -%}
+          ,{"src": {{ img | image_url: width: 1000 | json }}, "thumb": {{ img | image_url: width: 260 | json }}, "alt": {{ lp2_alts[forloop.index0] | replace: '{n}', 'Salty Lemon' | json }}}
+        {%- endfor %}
+      ]
     },
-    {
-     "src": "assets/img/g-lemon-2-quemehace.webp",
-     "thumb": "assets/img/g-lemon-2-quemehace-t.webp",
-     "alt": "Hidratación superior: chico bebiendo LIT al sol"
+    "watermelon": {
+      "name": "Salty Watermelon", "short": "Watermelon", "color": "var(--watermelon)", "aroma": "sandía",
+      "sub": {{ lp2_v_sw.id | json }}, "ot": {{ lp2_v_ow.id | json }},
+      "sachet": {{ 'nw-lp2-sobre-watermelon.webp' | asset_url | json }},
+      "gallery": [
+        {"src": {{ 'nw-lp2-g-watermelon-0-comp.webp' | asset_url | json }}, "thumb": {{ 'nw-lp2-g-watermelon-0-comp-t.webp' | asset_url | json }}, "alt": "Caja y sobre de LIT Salty Watermelon"}
+        {%- comment -%} La 1.ª foto del producto muestra el sobre anterior (1000 mg de sodio): se salta {%- endcomment -%}
+        {%- for img in p_w.images offset: 1 limit: 6 -%}
+          ,{"src": {{ img | image_url: width: 1000 | json }}, "thumb": {{ img | image_url: width: 260 | json }}, "alt": {{ lp2_alts[forloop.index0] | replace: '{n}', 'Salty Watermelon' | json }}}
+        {%- endfor %}
+      ]
     },
-    {
-     "src": "assets/img/g-lemon-3-formula.webp",
-     "thumb": "assets/img/g-lemon-3-formula-t.webp",
-     "alt": "La fórmula, sin rodeos: sodio, potasio y magnesio"
-    },
-    {
-     "src": "assets/img/g-lemon-4-funciona.webp",
-     "thumb": "assets/img/g-lemon-4-funciona-t.webp",
-     "alt": "Resultados del estudio a los 7 y a los 30 días"
-    },
-    {
-     "src": "assets/img/g-lemon-5-caja.webp",
-     "thumb": "assets/img/g-lemon-5-caja-t.webp",
-     "alt": "Caja abierta con 30 sobres de Salty Lemon"
-    },
-    {
-     "src": "assets/img/g-lemon-6-quelleva.webp",
-     "thumb": "assets/img/g-lemon-6-quelleva-t.webp",
-     "alt": "Información nutricional e ingredientes de Salty Lemon"
-    },
-    {
-     "src": "assets/img/g-lemon-7-encaja.webp",
-     "thumb": "assets/img/g-lemon-7-encaja-t.webp",
-     "alt": "Tu día no para, tú tampoco"
+    "peach": {
+      "name": "Salty Peach", "short": "Peach", "color": "var(--peach)", "aroma": "melocotón",
+      "sub": {{ lp2_v_sp.id | json }}, "ot": {{ lp2_v_op.id | json }},
+      "sachet": {{ 'nw-lp2-sobre-peach.webp' | asset_url | json }},
+      "gallery": [
+        {"src": {{ 'nw-lp2-g-peach-0-comp.webp' | asset_url | json }}, "thumb": {{ 'nw-lp2-g-peach-0-comp-t.webp' | asset_url | json }}, "alt": "Caja y sobre de LIT Salty Peach"}
+        {%- comment -%} La 1.ª foto del producto muestra el sobre anterior (1000 mg de sodio): se salta {%- endcomment -%}
+        {%- for img in p_p.images offset: 1 limit: 6 -%}
+          ,{"src": {{ img | image_url: width: 1000 | json }}, "thumb": {{ img | image_url: width: 260 | json }}, "alt": {{ lp2_alts[forloop.index0] | replace: '{n}', 'Salty Peach' | json }}}
+        {%- endfor %}
+      ]
     }
-   ]
   },
-  "watermelon": {
-   "name": "Salty Watermelon",
-   "short": "Watermelon",
-   "color": "var(--watermelon)",
-   "aroma": "sandía",
-   "sub": "65046727459165",
-   "ot": "65046758818141",
-   "sachet": "assets/img/sobre-watermelon.webp",
-   "gallery": [
-    {
-     "src": "assets/img/g-watermelon-0-comp.webp",
-     "thumb": "assets/img/g-watermelon-0-comp-t.webp",
-     "alt": "Caja y sobre de LIT Salty Watermelon"
+  "pack": {
+    "sub": {
+      {%- for v in k_s.variants -%}
+        {%- liquid
+          assign nl = 0
+          assign nw = 0
+          assign np = 0
+          assign parts = v.title | split: ' + '
+          for part in parts
+            assign n = part | split: ' ' | first | plus: 0
+            if part contains 'Watermelon'
+              assign nw = n
+            elsif part contains 'Peach'
+              assign np = n
+            elsif part contains 'Lemon'
+              assign nl = n
+            endif
+          endfor
+        -%}
+        "{{ nl }}-{{ nw }}-{{ np }}": {{ v.id | json }}{% unless forloop.last %},{% endunless %}
+      {%- endfor %}
     },
-    {
-     "src": "assets/img/g-wm-2-quemehace.webp",
-     "thumb": "assets/img/g-wm-2-quemehace-t.webp",
-     "alt": "Hidratación superior: chico bebiendo LIT al sol"
-    },
-    {
-     "src": "assets/img/g-wm-3-formula.webp",
-     "thumb": "assets/img/g-wm-3-formula-t.webp",
-     "alt": "La fórmula, sin rodeos: sodio, potasio y magnesio"
-    },
-    {
-     "src": "assets/img/g-wm-4-funciona.webp",
-     "thumb": "assets/img/g-wm-4-funciona-t.webp",
-     "alt": "Resultados del estudio a los 7 y a los 30 días"
-    },
-    {
-     "src": "assets/img/g-wm-5-caja.webp",
-     "thumb": "assets/img/g-wm-5-caja-t.webp",
-     "alt": "Caja abierta con 30 sobres de Salty Watermelon"
-    },
-    {
-     "src": "assets/img/g-wm-6-quelleva.webp",
-     "thumb": "assets/img/g-wm-6-quelleva-t.webp",
-     "alt": "Información nutricional e ingredientes de Salty Watermelon"
-    },
-    {
-     "src": "assets/img/g-wm-7-encaja.webp",
-     "thumb": "assets/img/g-wm-7-encaja-t.webp",
-     "alt": "Tu día no para, tú tampoco"
+    "ot": {
+      {%- for v in k_o.variants -%}
+        {%- liquid
+          assign nl = 0
+          assign nw = 0
+          assign np = 0
+          assign parts = v.title | split: ' + '
+          for part in parts
+            assign n = part | split: ' ' | first | plus: 0
+            if part contains 'Watermelon'
+              assign nw = n
+            elsif part contains 'Peach'
+              assign np = n
+            elsif part contains 'Lemon'
+              assign nl = n
+            endif
+          endfor
+        -%}
+        "{{ nl }}-{{ nw }}-{{ np }}": {{ v.id | json }}{% unless forloop.last %},{% endunless %}
+      {%- endfor %}
     }
-   ]
   },
-  "peach": {
-   "name": "Salty Peach",
-   "short": "Peach",
-   "color": "var(--peach)",
-   "aroma": "melocotón",
-   "sub": "65046790537565",
-   "ot": "65046823600477",
-   "sachet": "assets/img/sobre-peach.webp",
-   "gallery": [
-    {
-     "src": "assets/img/g-peach-0-comp.webp",
-     "thumb": "assets/img/g-peach-0-comp-t.webp",
-     "alt": "Caja y sobre de LIT Salty Peach"
-    },
-    {
-     "src": "assets/img/g-peach-2-quemehace.webp",
-     "thumb": "assets/img/g-peach-2-quemehace-t.webp",
-     "alt": "Hidratación superior: chico bebiendo LIT al sol"
-    },
-    {
-     "src": "assets/img/g-peach-3-formula.webp",
-     "thumb": "assets/img/g-peach-3-formula-t.webp",
-     "alt": "La fórmula, sin rodeos: sodio, potasio y magnesio"
-    },
-    {
-     "src": "assets/img/g-peach-4-funciona.webp",
-     "thumb": "assets/img/g-peach-4-funciona-t.webp",
-     "alt": "Resultados del estudio a los 7 y a los 30 días"
-    },
-    {
-     "src": "assets/img/g-peach-5-caja.webp",
-     "thumb": "assets/img/g-peach-5-caja-t.webp",
-     "alt": "Caja abierta con 30 sobres de Salty Peach"
-    },
-    {
-     "src": "assets/img/g-peach-6-quelleva.webp",
-     "thumb": "assets/img/g-peach-6-quelleva-t.webp",
-     "alt": "Información nutricional e ingredientes de Salty Peach"
-    },
-    {
-     "src": "assets/img/g-peach-7-encaja.webp",
-     "thumb": "assets/img/g-peach-7-encaja-t.webp",
-     "alt": "Tu día no para, tú tampoco"
-    }
-   ]
-  }
- },
- "pack": {
-  "sub": {
-   "4-0-0": "65636234625373",
-   "3-1-0": "65636234658141",
-   "2-2-0": "65636234690909",
-   "1-3-0": "65636234723677",
-   "0-4-0": "65636234756445",
-   "3-0-1": "65753050612061",
-   "2-1-1": "65753050677597",
-   "2-0-2": "65753050743133",
-   "1-2-1": "65753050775901",
-   "1-1-2": "65753051136349",
-   "1-0-3": "65753051431261",
-   "0-3-1": "65753051627869",
-   "0-2-2": "65753051660637",
-   "0-1-3": "65753051726173",
-   "0-0-4": "65753051791709"
-  },
-  "ot": {
-   "4-0-0": "65636236788061",
-   "3-1-0": "65636236820829",
-   "2-2-0": "65636236853597",
-   "1-3-0": "65636236886365",
-   "0-4-0": "65636236919133",
-   "3-0-1": "65753051824477",
-   "2-1-1": "65753051857245",
-   "2-0-2": "65753051890013",
-   "1-2-1": "65753051922781",
-   "1-1-2": "65753051955549",
-   "1-0-3": "65753053299037",
-   "0-3-1": "65753053364573",
-   "0-2-2": "65753053528413",
-   "0-1-3": "65753053561181",
-   "0-0-4": "65753053593949"
-  }
- },
- "prices": {
-  "1": {
-   "sub": {
-    "now": 2835,
-    "was": 3780
-   },
-   "ot": {
-    "now": 3780
-   }
-  },
-  "4": {
-   "sub": {
-    "now": 8505,
-    "was": 15120
-   },
-   "ot": {
-    "now": 11340
-   }
-  }
- },
- "units": {
-  "1": 30,
-  "4": 120
- },
- "maxQty": 10
+  "prices": {"1": {"sub": {"now": {{ lp2_sub1_now }}, "was": {{ lp2_sub1_was }}}, "ot": {"now": {{ lp2_ot1_now }}}}, "4": {"sub": {"now": {{ lp2_sub4_now }}, "was": {{ lp2_sub4_was }}}, "ot": {"now": {{ lp2_ot4_now }}}}},
+  "units": {"1": 30, "4": 120},
+  "maxQty": 10
 }
 </script>
 
@@ -251,13 +183,13 @@
 <a class="lp2-skip" href="#ficha">Ir a la compra</a>
 
 <!-- 0 · Barra promo -->
-<!--lp2:if promo-->
+{%- if s.promo_show -%}
 <div class="lp2-promo" role="note">
   <svg aria-hidden="true"><use href="#lp2-i-gift"/></svg>
-  <p class="lp2-promo__long"><!--lp2:text promo_text--><strong>Hasta el 15/10 · LIT × Biotherm:</strong> muestra gratis de Electrolyte Nutri Cream con tu pedido<!--/lp2--></p>
-  <p class="lp2-promo__short"><!--lp2:text promo_text_mobile--><strong>Hasta el 15/10:</strong> muestra gratis Biotherm con tu pedido<!--/lp2--></p>
+  <p class="lp2-promo__long">{{ s.promo_text }}</p>
+  <p class="lp2-promo__short">{{ s.promo_text_mobile }}</p>
 </div>
-<!--/lp2:if-->
+{%- endif -%}
 
 <main>
 
@@ -266,11 +198,11 @@
     <div class="lp2-hero__media">
       <div class="lp2-hero__frame" data-lp2-hero-frame>
         <picture>
-          <source media="(max-width: 767px)" srcset="assets/img/hero-poster-m.webp">
-          <img class="lp2-hero__poster" src="assets/img/hero-poster-1600.webp" srcset="assets/img/hero-poster-800.webp 800w, assets/img/hero-poster-1600.webp 1600w" sizes="100vw" alt="" fetchpriority="high">
+          <source media="(max-width: 767px)" srcset="{{ 'nw-hero-peach-poster-mobile.webp' | asset_url }}">
+          <img class="lp2-hero__poster" src="{{ 'nw-hero-peach-poster.webp' | asset_url }}" alt="" fetchpriority="high">
         </picture>
         <video class="lp2-hero__video" muted loop playsinline preload="none" aria-hidden="true"
-          data-lp2-src="assets/video/hero.mp4" data-lp2-src-m="assets/video/hero-m.mp4"></video>
+          data-lp2-src="{{ 'nw-hero-peach-opt.mp4' | asset_url }}" data-lp2-src-m="{{ 'nw-hero-peach-mobile.mp4' | asset_url }}"></video>
       </div>
       <span class="lp2-hero__logo" role="img" aria-label="LIT"><svg viewBox="0 0 70 53" aria-hidden="true"><use href="#lp2-lit-logo"/></svg></span>
       <button class="lp2-media-toggle" type="button" aria-pressed="false" aria-label="Pausar vídeo" data-lp2-toggle-video=".lp2-hero__video">
@@ -296,7 +228,7 @@
           </ul>
           <div class="lp2-hero__buy">
             <a class="lp2-btn lp2-btn--lg" href="#ficha">Probar LIT <svg class="lp2-btn__arrow" aria-hidden="true"><use href="#lp2-i-arrow"/></svg></a>
-            <p class="lp2-hero__micro">Desde <b><!--lp2:price from_per-->0,71 €<!--/lp2-->/sobre</b> · Envío gratis con suscripción</p>
+            <p class="lp2-hero__micro">Desde <b>{% render 'nw-lp2-price', cents: lp2_from_per %}/sobre</b> · Envío gratis con suscripción</p>
           </div>
           <ul class="lp2-hero__proof">
             <li><span class="lp2-stars" aria-hidden="true"><svg><use href="#lp2-i-star"/></svg><svg><use href="#lp2-i-star"/></svg><svg><use href="#lp2-i-star"/></svg><svg><use href="#lp2-i-star"/></svg><span class="lp2-star-half"><svg><use href="#lp2-i-star"/></svg><svg><use href="#lp2-i-star"/></svg></span></span><span>Excelente en Trustpilot</span></li>
@@ -314,30 +246,30 @@
       <p class="lp2-press__label">Hablan de nosotros</p>
       <div class="lp2-press__marquee">
         <ul class="lp2-press__track">
-          <li><img src="assets/img/press/elmundo.webp" alt="El Mundo" width="677" height="90"></li>
-          <li><img src="assets/img/press/menshealth.webp" alt="Men's Health" width="437" height="90"></li>
-          <li><img src="assets/img/press/marca.webp" alt="Marca" width="324" height="90"></li>
-          <li><img src="assets/img/press/glamour.webp" alt="Glamour" width="395" height="90"></li>
-          <li><img src="assets/img/press/europapress.webp" alt="Europa Press" width="728" height="90"></li>
-          <li><img src="assets/img/press/okdiario.webp" alt="OKDiario" width="455" height="90"></li>
-          <li><img src="assets/img/press/sportlife.webp" alt="SportLife" width="341" height="90"></li>
-          <li><img src="assets/img/press/infosalus.webp" alt="Infosalus" width="475" height="90"></li>
-          <li><img src="assets/img/press/corredor.webp" alt="Corredor" width="792" height="90"></li>
-          <li><img src="assets/img/press/trailrun.webp" alt="Trail Run" width="503" height="90"></li>
-          <li><img src="assets/img/press/nutrasalud.webp" alt="NutraSalud" width="361" height="90"></li>
-          <li><img src="assets/img/press/culturaocio.webp" alt="CulturaOcio" width="615" height="90"></li>
-          <li aria-hidden="true"><img src="assets/img/press/elmundo.webp" alt="" width="677" height="90"></li>
-          <li aria-hidden="true"><img src="assets/img/press/menshealth.webp" alt="" width="437" height="90"></li>
-          <li aria-hidden="true"><img src="assets/img/press/marca.webp" alt="" width="324" height="90"></li>
-          <li aria-hidden="true"><img src="assets/img/press/glamour.webp" alt="" width="395" height="90"></li>
-          <li aria-hidden="true"><img src="assets/img/press/europapress.webp" alt="" width="728" height="90"></li>
-          <li aria-hidden="true"><img src="assets/img/press/okdiario.webp" alt="" width="455" height="90"></li>
-          <li aria-hidden="true"><img src="assets/img/press/sportlife.webp" alt="" width="341" height="90"></li>
-          <li aria-hidden="true"><img src="assets/img/press/infosalus.webp" alt="" width="475" height="90"></li>
-          <li aria-hidden="true"><img src="assets/img/press/corredor.webp" alt="" width="792" height="90"></li>
-          <li aria-hidden="true"><img src="assets/img/press/trailrun.webp" alt="" width="503" height="90"></li>
-          <li aria-hidden="true"><img src="assets/img/press/nutrasalud.webp" alt="" width="361" height="90"></li>
-          <li aria-hidden="true"><img src="assets/img/press/culturaocio.webp" alt="" width="615" height="90"></li>
+          <li><img src="{{ 'nw-lp2-press-elmundo.webp' | asset_url }}" alt="El Mundo" width="677" height="90"></li>
+          <li><img src="{{ 'nw-lp2-press-menshealth.webp' | asset_url }}" alt="Men's Health" width="437" height="90"></li>
+          <li><img src="{{ 'nw-lp2-press-marca.webp' | asset_url }}" alt="Marca" width="324" height="90"></li>
+          <li><img src="{{ 'nw-lp2-press-glamour.webp' | asset_url }}" alt="Glamour" width="395" height="90"></li>
+          <li><img src="{{ 'nw-lp2-press-europapress.webp' | asset_url }}" alt="Europa Press" width="728" height="90"></li>
+          <li><img src="{{ 'nw-lp2-press-okdiario.webp' | asset_url }}" alt="OKDiario" width="455" height="90"></li>
+          <li><img src="{{ 'nw-lp2-press-sportlife.webp' | asset_url }}" alt="SportLife" width="341" height="90"></li>
+          <li><img src="{{ 'nw-lp2-press-infosalus.webp' | asset_url }}" alt="Infosalus" width="475" height="90"></li>
+          <li><img src="{{ 'nw-lp2-press-corredor.webp' | asset_url }}" alt="Corredor" width="792" height="90"></li>
+          <li><img src="{{ 'nw-lp2-press-trailrun.webp' | asset_url }}" alt="Trail Run" width="503" height="90"></li>
+          <li><img src="{{ 'nw-lp2-press-nutrasalud.webp' | asset_url }}" alt="NutraSalud" width="361" height="90"></li>
+          <li><img src="{{ 'nw-lp2-press-culturaocio.webp' | asset_url }}" alt="CulturaOcio" width="615" height="90"></li>
+          <li aria-hidden="true"><img src="{{ 'nw-lp2-press-elmundo.webp' | asset_url }}" alt="" width="677" height="90"></li>
+          <li aria-hidden="true"><img src="{{ 'nw-lp2-press-menshealth.webp' | asset_url }}" alt="" width="437" height="90"></li>
+          <li aria-hidden="true"><img src="{{ 'nw-lp2-press-marca.webp' | asset_url }}" alt="" width="324" height="90"></li>
+          <li aria-hidden="true"><img src="{{ 'nw-lp2-press-glamour.webp' | asset_url }}" alt="" width="395" height="90"></li>
+          <li aria-hidden="true"><img src="{{ 'nw-lp2-press-europapress.webp' | asset_url }}" alt="" width="728" height="90"></li>
+          <li aria-hidden="true"><img src="{{ 'nw-lp2-press-okdiario.webp' | asset_url }}" alt="" width="455" height="90"></li>
+          <li aria-hidden="true"><img src="{{ 'nw-lp2-press-sportlife.webp' | asset_url }}" alt="" width="341" height="90"></li>
+          <li aria-hidden="true"><img src="{{ 'nw-lp2-press-infosalus.webp' | asset_url }}" alt="" width="475" height="90"></li>
+          <li aria-hidden="true"><img src="{{ 'nw-lp2-press-corredor.webp' | asset_url }}" alt="" width="792" height="90"></li>
+          <li aria-hidden="true"><img src="{{ 'nw-lp2-press-trailrun.webp' | asset_url }}" alt="" width="503" height="90"></li>
+          <li aria-hidden="true"><img src="{{ 'nw-lp2-press-nutrasalud.webp' | asset_url }}" alt="" width="361" height="90"></li>
+          <li aria-hidden="true"><img src="{{ 'nw-lp2-press-culturaocio.webp' | asset_url }}" alt="" width="615" height="90"></li>
         </ul>
       </div>
     </div>
@@ -376,8 +308,8 @@
           <span class="lp2-mech__glow" aria-hidden="true"></span>
           <div class="lp2-sachet">
             <div class="lp2-sachet__inner" data-lp2-sachet>
-              <img class="lp2-sachet__face lp2-sachet__face--front" src="assets/img/sobre-front.webp" srcset="assets/img/sobre-front-480.webp 291w, assets/img/sobre-front.webp 456w" sizes="(max-width: 1023px) 200px, 290px" width="456" height="970" alt="Sobre de LIT Salty Lemon. En el frontal: sodio 500 mg, potasio 150 mg y magnesio 60 mg.">
-              <img class="lp2-sachet__face lp2-sachet__face--back" src="assets/img/sobre-back.webp" srcset="assets/img/sobre-back-480.webp 291w, assets/img/sobre-back.webp 456w" sizes="(max-width: 1023px) 200px, 290px" width="456" height="970" alt="Reverso del sobre: modo de empleo en cuatro pasos e ingredientes." loading="lazy">
+              <img class="lp2-sachet__face lp2-sachet__face--front" src="{{ 'nw-lp2-sobre-front.webp' | asset_url }}" srcset="{{ 'nw-lp2-sobre-front-480.webp' | asset_url }} 291w, {{ 'nw-lp2-sobre-front.webp' | asset_url }} 456w" sizes="(max-width: 1023px) 200px, 290px" width="456" height="970" alt="Sobre de LIT Salty Lemon. En el frontal: sodio 500 mg, potasio 150 mg y magnesio 60 mg.">
+              <img class="lp2-sachet__face lp2-sachet__face--back" src="{{ 'nw-lp2-sobre-back.webp' | asset_url }}" srcset="{{ 'nw-lp2-sobre-back-480.webp' | asset_url }} 291w, {{ 'nw-lp2-sobre-back.webp' | asset_url }} 456w" sizes="(max-width: 1023px) 200px, 290px" width="456" height="970" alt="Reverso del sobre: modo de empleo en cuatro pasos e ingredientes." loading="lazy">
             </div>
             <span class="lp2-sachet__shadow" aria-hidden="true"></span>
           </div>
@@ -405,7 +337,7 @@
 
   <!-- 4 · Qué te aporta -->
   <section class="lp2-bens lp2-on-dark lp2-grain" aria-labelledby="lp2-bens-title">
-    <div class="lp2-bg-photo lp2-bg-photo--bens" aria-hidden="true"><img src="assets/img/aporta-bg-1600.webp" srcset="assets/img/aporta-bg-800.webp 800w, assets/img/aporta-bg-1600.webp 1600w" sizes="100vw" alt="" loading="lazy" data-lp2-parallax="8"></div>
+    <div class="lp2-bg-photo lp2-bg-photo--bens" aria-hidden="true"><img src="https://cdn.shopify.com/s/files/1/0896/3319/4288/files/Lit_Superior_Hydration.8.jpg?width=1600" srcset="https://cdn.shopify.com/s/files/1/0896/3319/4288/files/Lit_Superior_Hydration.8.jpg?width=800 800w, https://cdn.shopify.com/s/files/1/0896/3319/4288/files/Lit_Superior_Hydration.8.jpg?width=1600 1600w" sizes="100vw" alt="" loading="lazy" data-lp2-parallax="8"></div>
     <div class="lp2-wrap">
       <header class="lp2-bens__head">
         <h2 class="lp2-h2" id="lp2-bens-title">
@@ -414,25 +346,25 @@
       </header>
       <ul class="lp2-bens__list" role="list">
         <li class="lp2-ben" data-lp2-rise>
-          <figure class="lp2-ben__media"><img src="assets/img/b-corredora.webp" srcset="assets/img/b-corredora-600.webp 600w, assets/img/b-corredora.webp 1000w" sizes="(max-width: 899px) 76vw, 25vw" alt="Corredora en la ciudad" loading="lazy" data-lp2-parallax></figure>
+          <figure class="lp2-ben__media"><img src="https://cdn.shopify.com/s/files/1/0896/3319/4288/files/3-2_8.jpg?width=1000" srcset="https://cdn.shopify.com/s/files/1/0896/3319/4288/files/3-2_8.jpg?width=600 600w, https://cdn.shopify.com/s/files/1/0896/3319/4288/files/3-2_8.jpg?width=1000 1000w" sizes="(max-width: 899px) 76vw, 25vw" alt="Corredora en la ciudad" loading="lazy" data-lp2-parallax></figure>
           <h3 class="lp2-ben__title"><span>Energía</span><span>estable</span></h3>
           <span class="lp2-ben__rule" aria-hidden="true"></span>
           <p class="lp2-ben__text">Mantén tus niveles de energía estables. Sin los bajones del café y el azúcar.</p>
         </li>
         <li class="lp2-ben" data-lp2-rise>
-          <figure class="lp2-ben__media"><img src="assets/img/b-preparando.webp" srcset="assets/img/b-preparando-600.webp 600w, assets/img/b-preparando.webp 1000w" sizes="(max-width: 899px) 76vw, 25vw" alt="Preparando LIT después de entrenar" loading="lazy" data-lp2-parallax></figure>
+          <figure class="lp2-ben__media"><img src="https://cdn.shopify.com/s/files/1/0896/3319/4288/files/3-2_6.jpg?width=1000" srcset="https://cdn.shopify.com/s/files/1/0896/3319/4288/files/3-2_6.jpg?width=600 600w, https://cdn.shopify.com/s/files/1/0896/3319/4288/files/3-2_6.jpg?width=1000 1000w" sizes="(max-width: 899px) 76vw, 25vw" alt="Preparando LIT después de entrenar" loading="lazy" data-lp2-parallax></figure>
           <h3 class="lp2-ben__title"><span>Recuperación</span><span>inteligente</span></h3>
           <span class="lp2-ben__rule" aria-hidden="true"></span>
           <p class="lp2-ben__text">Mejora tu descanso y tu relajación después de esfuerzos intensos.</p>
         </li>
         <li class="lp2-ben" data-lp2-rise>
-          <figure class="lp2-ben__media"><img src="assets/img/b-flexiones.webp" srcset="assets/img/b-flexiones-600.webp 600w, assets/img/b-flexiones.webp 1000w" sizes="(max-width: 899px) 76vw, 25vw" alt="Flexiones en el gimnasio" loading="lazy" data-lp2-parallax></figure>
+          <figure class="lp2-ben__media"><img src="https://cdn.shopify.com/s/files/1/0896/3319/4288/files/chico_flexion.png?width=1000" srcset="https://cdn.shopify.com/s/files/1/0896/3319/4288/files/chico_flexion.png?width=600 600w, https://cdn.shopify.com/s/files/1/0896/3319/4288/files/chico_flexion.png?width=1000 1000w" sizes="(max-width: 899px) 76vw, 25vw" alt="Flexiones en el gimnasio" loading="lazy" data-lp2-parallax></figure>
           <h3 class="lp2-ben__title"><span>Concentración</span><span>sostenida</span></h3>
           <span class="lp2-ben__rule" aria-hidden="true"></span>
           <p class="lp2-ben__text">Atención sin fatiga mental. Equilibra tu sistema nervioso.</p>
         </li>
         <li class="lp2-ben" data-lp2-rise>
-          <figure class="lp2-ben__media"><img src="assets/img/b-grupo.webp" srcset="assets/img/b-grupo-600.webp 600w, assets/img/b-grupo.webp 900w" sizes="(max-width: 899px) 76vw, 25vw" alt="Grupo corriendo con camiseta LIT" loading="lazy" data-lp2-parallax></figure>
+          <figure class="lp2-ben__media"><img src="https://cdn.shopify.com/s/files/1/0896/3319/4288/files/DON_2370.jpg?width=900" srcset="https://cdn.shopify.com/s/files/1/0896/3319/4288/files/DON_2370.jpg?width=600 600w, https://cdn.shopify.com/s/files/1/0896/3319/4288/files/DON_2370.jpg?width=900 900w" sizes="(max-width: 899px) 76vw, 25vw" alt="Grupo corriendo con camiseta LIT" loading="lazy" data-lp2-parallax></figure>
           <h3 class="lp2-ben__title"><span>Rendimiento</span><span>mejorado</span></h3>
           <span class="lp2-ben__rule" aria-hidden="true"></span>
           <p class="lp2-ben__text">Haz más con menos desgaste. Mejora tu bienestar para dar tu 100%.</p>
@@ -440,14 +372,14 @@
       </ul>
       <div class="lp2-bens__foot" data-lp2-rise>
         <a class="lp2-btn" href="#ficha">Probar LIT <svg class="lp2-btn__arrow" aria-hidden="true"><use href="#lp2-i-arrow"/></svg></a>
-        <p>Desde <!--lp2:price from_per-->0,71 €<!--/lp2-->/sobre · Envío gratis con suscripción</p>
+        <p>Desde {% render 'nw-lp2-price', cents: lp2_from_per %}/sobre · Envío gratis con suscripción</p>
       </div>
     </div>
   </section>
 
   <!-- 5 · Respaldado por datos -->
   <section class="lp2-data lp2-grain" aria-labelledby="lp2-data-title">
-    <div class="lp2-bg-photo lp2-bg-photo--data" aria-hidden="true"><img src="assets/img/runners-costa-1600.webp" srcset="assets/img/runners-costa-800.webp 800w, assets/img/runners-costa-1600.webp 1600w" sizes="100vw" alt="" loading="lazy" data-lp2-parallax="6"></div>
+    <div class="lp2-bg-photo lp2-bg-photo--data" aria-hidden="true"><img src="https://cdn.shopify.com/s/files/1/0896/3319/4288/files/nw-home-problema-runners.webp?width=1600" srcset="https://cdn.shopify.com/s/files/1/0896/3319/4288/files/nw-home-problema-runners.webp?width=800 800w, https://cdn.shopify.com/s/files/1/0896/3319/4288/files/nw-home-problema-runners.webp?width=1600 1600w" sizes="100vw" alt="" loading="lazy" data-lp2-parallax="6"></div>
     <div class="lp2-wrap">
       <header class="lp2-data__head">
         <h2 class="lp2-h2" id="lp2-data-title">
@@ -504,7 +436,7 @@
           </figure>
           <figure class="lp2-units" aria-label="9 de cada 10 participantes volverían a comprar LIT">
             <div class="lp2-units__row" aria-hidden="true">
-              <img src="assets/img/sobre-lemon.webp" alt="" width="64" height="142"><img src="assets/img/sobre-watermelon.webp" alt="" width="64" height="142"><img src="assets/img/sobre-peach.webp" alt="" width="64" height="142"><img src="assets/img/sobre-lemon.webp" alt="" width="64" height="142"><img src="assets/img/sobre-watermelon.webp" alt="" width="64" height="142"><img src="assets/img/sobre-peach.webp" alt="" width="64" height="142"><img src="assets/img/sobre-lemon.webp" alt="" width="64" height="142"><img src="assets/img/sobre-watermelon.webp" alt="" width="64" height="142"><img src="assets/img/sobre-peach.webp" alt="" width="64" height="142"><img class="lp2-is-off" src="assets/img/sobre-lemon.webp" alt="" width="64" height="142">
+              <img src="{{ 'nw-lp2-sobre-lemon.webp' | asset_url }}" alt="" width="64" height="142"><img src="{{ 'nw-lp2-sobre-watermelon.webp' | asset_url }}" alt="" width="64" height="142"><img src="{{ 'nw-lp2-sobre-peach.webp' | asset_url }}" alt="" width="64" height="142"><img src="{{ 'nw-lp2-sobre-lemon.webp' | asset_url }}" alt="" width="64" height="142"><img src="{{ 'nw-lp2-sobre-watermelon.webp' | asset_url }}" alt="" width="64" height="142"><img src="{{ 'nw-lp2-sobre-peach.webp' | asset_url }}" alt="" width="64" height="142"><img src="{{ 'nw-lp2-sobre-lemon.webp' | asset_url }}" alt="" width="64" height="142"><img src="{{ 'nw-lp2-sobre-watermelon.webp' | asset_url }}" alt="" width="64" height="142"><img src="{{ 'nw-lp2-sobre-peach.webp' | asset_url }}" alt="" width="64" height="142"><img class="lp2-is-off" src="{{ 'nw-lp2-sobre-lemon.webp' | asset_url }}" alt="" width="64" height="142">
             </div>
             <figcaption class="lp2-units__cap"><b>9 de cada 10</b> repetirían tras 30 días</figcaption>
           </figure>
@@ -535,16 +467,16 @@
           </h2>
           <p class="lp2-flav__text">Salty Lemon, Salty Watermelon y Salty Peach llevan exactamente la misma fórmula. Elige el que más te apetezca beber a diario.</p>
           <div class="lp2-flav__tabs" role="group" aria-label="Elige un sabor para verlo">
-            <button class="lp2-flav__tab" type="button" aria-pressed="true" data-lp2-flav-tab="0"><img src="assets/img/sobre-lemon-h.webp" width="360" height="160" alt=""><span>Salty <b>Lemon</b></span></button>
-            <button class="lp2-flav__tab" type="button" aria-pressed="false" data-lp2-flav-tab="1"><img src="assets/img/sobre-watermelon-h.webp" width="360" height="165" alt=""><span>Salty <b>Watermelon</b></span></button>
-            <button class="lp2-flav__tab" type="button" aria-pressed="false" data-lp2-flav-tab="2"><img src="assets/img/sobre-peach-h.webp" width="360" height="159" alt=""><span>Salty <b>Peach</b></span></button>
+            <button class="lp2-flav__tab" type="button" aria-pressed="true" data-lp2-flav-tab="0"><img src="{{ 'nw-lp2-sobre-lemon-h.webp' | asset_url }}" width="360" height="160" alt=""><span>Salty <b>Lemon</b></span></button>
+            <button class="lp2-flav__tab" type="button" aria-pressed="false" data-lp2-flav-tab="1"><img src="{{ 'nw-lp2-sobre-watermelon-h.webp' | asset_url }}" width="360" height="165" alt=""><span>Salty <b>Watermelon</b></span></button>
+            <button class="lp2-flav__tab" type="button" aria-pressed="false" data-lp2-flav-tab="2"><img src="{{ 'nw-lp2-sobre-peach-h.webp' | asset_url }}" width="360" height="159" alt=""><span>Salty <b>Peach</b></span></button>
           </div>
         </div>
         <ul class="lp2-flav__items">
           <li class="lp2-flav__item lp2-flav__item--lemon lp2-is-active" data-lp2-flav-item="0">
             <figure class="lp2-flav__visual">
-              <img class="lp2-flav__box" src="assets/img/caja-lemon.webp" srcset="assets/img/caja-lemon-560.webp 560w, assets/img/caja-lemon.webp 1100w" sizes="(max-width: 1023px) 70vw, 34vw" width="1100" height="925" alt="" loading="lazy">
-              <img class="lp2-flav__sachet" src="assets/img/sobre-lemon.webp" width="332" height="745" alt="Caja y sobre de LIT Salty Lemon" loading="lazy">
+              <img class="lp2-flav__box" src="{{ 'nw-lp2-caja-lemon.webp' | asset_url }}" srcset="{{ 'nw-lp2-caja-lemon-560.webp' | asset_url }} 560w, {{ 'nw-lp2-caja-lemon.webp' | asset_url }} 1100w" sizes="(max-width: 1023px) 70vw, 34vw" width="1100" height="925" alt="" loading="lazy">
+              <img class="lp2-flav__sachet" src="{{ 'nw-lp2-sobre-lemon.webp' | asset_url }}" width="332" height="745" alt="Caja y sobre de LIT Salty Lemon" loading="lazy">
             </figure>
             <div class="lp2-flav__cap">
               <p class="lp2-flav__name"><span>Salty</span>Lemon</p>
@@ -554,8 +486,8 @@
           </li>
           <li class="lp2-flav__item lp2-flav__item--watermelon" data-lp2-flav-item="1">
             <figure class="lp2-flav__visual">
-              <img class="lp2-flav__box" src="assets/img/caja-watermelon.webp" srcset="assets/img/caja-watermelon-560.webp 560w, assets/img/caja-watermelon.webp 1100w" sizes="(max-width: 1023px) 70vw, 34vw" width="1100" height="925" alt="" loading="lazy">
-              <img class="lp2-flav__sachet" src="assets/img/sobre-watermelon.webp" width="328" height="716" alt="Caja y sobre de LIT Salty Watermelon" loading="lazy">
+              <img class="lp2-flav__box" src="{{ 'nw-lp2-caja-watermelon.webp' | asset_url }}" srcset="{{ 'nw-lp2-caja-watermelon-560.webp' | asset_url }} 560w, {{ 'nw-lp2-caja-watermelon.webp' | asset_url }} 1100w" sizes="(max-width: 1023px) 70vw, 34vw" width="1100" height="925" alt="" loading="lazy">
+              <img class="lp2-flav__sachet" src="{{ 'nw-lp2-sobre-watermelon.webp' | asset_url }}" width="328" height="716" alt="Caja y sobre de LIT Salty Watermelon" loading="lazy">
             </figure>
             <div class="lp2-flav__cap">
               <p class="lp2-flav__name"><span>Salty</span>Watermelon</p>
@@ -565,8 +497,8 @@
           </li>
           <li class="lp2-flav__item lp2-flav__item--peach" data-lp2-flav-item="2">
             <figure class="lp2-flav__visual">
-              <img class="lp2-flav__box" src="assets/img/caja-peach.webp" srcset="assets/img/caja-peach-560.webp 560w, assets/img/caja-peach.webp 1100w" sizes="(max-width: 1023px) 70vw, 34vw" width="1100" height="925" alt="" loading="lazy">
-              <img class="lp2-flav__sachet" src="assets/img/sobre-peach.webp" width="329" height="743" alt="Caja y sobre de LIT Salty Peach" loading="lazy">
+              <img class="lp2-flav__box" src="{{ 'nw-lp2-caja-peach.webp' | asset_url }}" srcset="{{ 'nw-lp2-caja-peach-560.webp' | asset_url }} 560w, {{ 'nw-lp2-caja-peach.webp' | asset_url }} 1100w" sizes="(max-width: 1023px) 70vw, 34vw" width="1100" height="925" alt="" loading="lazy">
+              <img class="lp2-flav__sachet" src="{{ 'nw-lp2-sobre-peach.webp' | asset_url }}" width="329" height="743" alt="Caja y sobre de LIT Salty Peach" loading="lazy">
             </figure>
             <div class="lp2-flav__cap">
               <p class="lp2-flav__name"><span>Salty</span>Peach</p>
@@ -588,7 +520,7 @@
         <div class="lp2-gal__stage">
           <span class="lp2-gal__badge" data-lp2-gal-badge><i></i><span data-lp2-flavor-name>Salty Lemon</span></span>
           <div class="lp2-gal__flip" data-lp2-gal-flip>
-            <img class="lp2-gal__img" data-lp2-gal-img src="assets/img/g-lemon-0-comp.webp" width="1000" height="1250" alt="Caja y sobre de LIT Salty Lemon">
+            <img class="lp2-gal__img" data-lp2-gal-img src="{{ 'nw-lp2-g-lemon-0-comp.webp' | asset_url }}" width="1000" height="1250" alt="Caja y sobre de LIT Salty Lemon">
           </div>
           <button class="lp2-gal__nav lp2-gal__nav--prev" type="button" aria-label="Imagen anterior" data-lp2-gal-prev><svg aria-hidden="true"><use href="#lp2-i-arrow"/></svg></button>
           <button class="lp2-gal__nav lp2-gal__nav--next" type="button" aria-label="Imagen siguiente" data-lp2-gal-next><svg aria-hidden="true"><use href="#lp2-i-arrow"/></svg></button>
@@ -600,7 +532,7 @@
       <!-- Configurador -->
       <div class="lp2-cfg">
         <header class="lp2-cfg__head">
-          <img class="lp2-cfg__thumb" data-lp2-cfg-thumb src="assets/img/g-lemon-0-comp-t.webp" width="260" height="325" alt="">
+          <img class="lp2-cfg__thumb" data-lp2-cfg-thumb src="{{ 'nw-lp2-g-lemon-0-comp-t.webp' | asset_url }}" width="260" height="325" alt="">
           <div class="lp2-cfg__titles">
             <h2 class="lp2-cfg__name" id="lp2-buy-title">LIT Hidratación Diaria</h2>
             <p class="lp2-cfg__rotor" aria-hidden="true">Para los que <span class="lp2-rotor"><span class="lp2-rotor__list" data-lp2-rotor><span>entrenan.</span><span>trabajan.</span><span>se lían un martes.</span><span>viajan.</span><span>madrugan.</span><span>trasnochan.</span><span>entrenan.</span></span></span></p>
@@ -617,15 +549,15 @@
           <div class="lp2-flavors">
             <label class="lp2-opt lp2-flavor" style="--fc:var(--lemon)">
               <input type="radio" name="lp2-flavor" value="lemon" checked>
-              <span class="lp2-opt__box"><img class="lp2-flavor__img" src="assets/img/sobre-lemon-h.webp" width="360" height="160" alt=""><span class="lp2-flavor__name"><small>Salty</small>Lemon</span></span>
+              <span class="lp2-opt__box"><img class="lp2-flavor__img" src="{{ 'nw-lp2-sobre-lemon-h.webp' | asset_url }}" width="360" height="160" alt=""><span class="lp2-flavor__name"><small>Salty</small>Lemon</span></span>
             </label>
             <label class="lp2-opt lp2-flavor" style="--fc:var(--watermelon)">
               <input type="radio" name="lp2-flavor" value="watermelon">
-              <span class="lp2-opt__box"><img class="lp2-flavor__img" src="assets/img/sobre-watermelon-h.webp" width="360" height="165" alt=""><span class="lp2-flavor__name"><small>Salty</small>Watermelon</span></span>
+              <span class="lp2-opt__box"><img class="lp2-flavor__img" src="{{ 'nw-lp2-sobre-watermelon-h.webp' | asset_url }}" width="360" height="165" alt=""><span class="lp2-flavor__name"><small>Salty</small>Watermelon</span></span>
             </label>
             <label class="lp2-opt lp2-flavor" style="--fc:var(--peach)">
               <input type="radio" name="lp2-flavor" value="peach">
-              <span class="lp2-opt__box"><img class="lp2-flavor__img" src="assets/img/sobre-peach-h.webp" width="360" height="159" alt=""><span class="lp2-flavor__name"><small>Salty</small>Peach</span></span>
+              <span class="lp2-opt__box"><img class="lp2-flavor__img" src="{{ 'nw-lp2-sobre-peach-h.webp' | asset_url }}" width="360" height="159" alt=""><span class="lp2-flavor__name"><small>Salty</small>Peach</span></span>
             </label>
           </div>
         </fieldset>
@@ -644,8 +576,8 @@
                     <option value="691259801949">15 días</option><option value="691259834717">1 mes</option><option value="691259867485" selected>45 días</option><option value="691259900253">2 meses</option><option value="691259933021">3 meses</option><option value="691259965789">4 meses</option><option value="691259998557">5 meses</option><option value="691260031325">6 meses</option>
                   </select></span>
                 </span>
-                <span class="lp2-offer__price"><span class="lp2-offer__now"><!--lp2:price sub1_now-->28,35 €<!--/lp2--></span><s><!--lp2:price sub1_was-->37,80 €<!--/lp2--></s><span class="lp2-offer__per"><!--lp2:price sub1_per-->0,95 €<!--/lp2-->/sobre</span></span>
-                <span class="lp2-offer__more"><span><svg aria-hidden="true"><use href="#lp2-i-check"/></svg>Envío gratis</span><span><svg aria-hidden="true"><use href="#lp2-i-check"/></svg>Cancela cuando quieras</span><span class="lp2-offer__save">Ahorra <!--lp2:pct sub1_save-->25<!--/lp2--> %</span></span>
+                <span class="lp2-offer__price"><span class="lp2-offer__now">{% render 'nw-lp2-price', cents: lp2_sub1_now %}</span><s>{% render 'nw-lp2-price', cents: lp2_sub1_was %}</s><span class="lp2-offer__per">{% render 'nw-lp2-price', cents: lp2_sub1_per %}/sobre</span></span>
+                <span class="lp2-offer__more"><span><svg aria-hidden="true"><use href="#lp2-i-check"/></svg>Envío gratis</span><span><svg aria-hidden="true"><use href="#lp2-i-check"/></svg>Cancela cuando quieras</span><span class="lp2-offer__save">Ahorra {{ lp2_sub1_save_pct }} %</span></span>
               </span>
             </label>
             <label class="lp2-opt lp2-offer" data-lp2-offer="sub4">
@@ -659,8 +591,8 @@
                     <option value="691259801949">15 días</option><option value="691259834717">1 mes</option><option value="691259867485">45 días</option><option value="691259900253">2 meses</option><option value="691259933021">3 meses</option><option value="691259965789">4 meses</option><option value="691259998557">5 meses</option><option value="691260031325" selected>6 meses</option>
                   </select></span>
                 </span>
-                <span class="lp2-offer__price"><span class="lp2-offer__now"><!--lp2:price sub4_now-->85,05 €<!--/lp2--></span><s><!--lp2:price sub4_was-->151,20 €<!--/lp2--></s><span class="lp2-offer__per"><!--lp2:price sub4_per-->0,71 €<!--/lp2-->/sobre</span></span>
-                <span class="lp2-offer__more"><span><svg aria-hidden="true"><use href="#lp2-i-check"/></svg>Envío gratis</span><span><svg aria-hidden="true"><use href="#lp2-i-check"/></svg>Cancela cuando quieras</span><span class="lp2-offer__save">Ahorras <!--lp2:price sub4_save-->66,15 €<!--/lp2--></span></span>
+                <span class="lp2-offer__price"><span class="lp2-offer__now">{% render 'nw-lp2-price', cents: lp2_sub4_now %}</span><s>{% render 'nw-lp2-price', cents: lp2_sub4_was %}</s><span class="lp2-offer__per">{% render 'nw-lp2-price', cents: lp2_sub4_per %}/sobre</span></span>
+                <span class="lp2-offer__more"><span><svg aria-hidden="true"><use href="#lp2-i-check"/></svg>Envío gratis</span><span><svg aria-hidden="true"><use href="#lp2-i-check"/></svg>Cancela cuando quieras</span><span class="lp2-offer__save">Ahorras {% render 'nw-lp2-price', cents: lp2_sub4_save %}</span></span>
               </span>
             </label>
             <label class="lp2-opt lp2-offer" data-lp2-offer="ot1">
@@ -671,7 +603,7 @@
                   <span class="lp2-offer__title">Compra única</span>
                   <span class="lp2-offer__sub">30 sobres</span>
                 </span>
-                <span class="lp2-offer__price"><span class="lp2-offer__now"><!--lp2:price ot1_now-->37,80 €<!--/lp2--></span><span class="lp2-offer__per"><!--lp2:price ot1_per-->1,26 €<!--/lp2-->/sobre</span></span>
+                <span class="lp2-offer__price"><span class="lp2-offer__now">{% render 'nw-lp2-price', cents: lp2_ot1_now %}</span><span class="lp2-offer__per">{% render 'nw-lp2-price', cents: lp2_ot1_per %}/sobre</span></span>
               </span>
             </label>
           </div>
@@ -694,13 +626,13 @@
             <output data-lp2-qty-out aria-live="polite">1</output>
             <button type="button" aria-label="Añadir una" data-lp2-qty="1"><svg aria-hidden="true"><use href="#lp2-i-plus"/></svg></button>
           </div>
-          <form id="lp2-cart-form" action="https://litsalt.com/cart/add" method="post" data-lp2-cart>
-            <input type="hidden" name="id" value="63887092154717">
+          <form id="lp2-cart-form" action="{{ routes.cart_add_url }}" method="post" data-lp2-cart>
+            <input type="hidden" name="id" value="{{ lp2_v_sl.id }}">
             <input type="hidden" name="quantity" value="1">
             <input type="hidden" name="selling_plan" value="691259867485">
             <input type="hidden" name="return_to" value="/checkout">
             <button class="lp2-btn lp2-btn--dark lp2-btn--block" type="submit">
-              <span class="lp2-add__label">Añadir al carrito</span><span class="lp2-add__sep" aria-hidden="true">·</span><span class="lp2-add__price lp2-odo" data-lp2-odo aria-hidden="true"><!--lp2:price sub1_now-->28,35 €<!--/lp2--></span><span class="lp2-vh" data-lp2-total-sr><!--lp2:price sub1_now-->28,35 €<!--/lp2--></span>
+              <span class="lp2-add__label">Añadir al carrito</span><span class="lp2-add__sep" aria-hidden="true">·</span><span class="lp2-add__price lp2-odo" data-lp2-odo aria-hidden="true">{% render 'nw-lp2-price', cents: lp2_sub1_now %}</span><span class="lp2-vh" data-lp2-total-sr>{% render 'nw-lp2-price', cents: lp2_sub1_now %}</span>
             </button>
           </form>
         </div>
@@ -711,9 +643,9 @@
           <li><svg aria-hidden="true"><use href="#lp2-i-lock"/></svg>Pago seguro</li>
         </ul>
 
-        <!--lp2:if discovery-->
-        <p class="lp2-discovery"><img src="assets/img/discovery.webp" width="600" height="782" alt="" loading="lazy"><span>¿Dudas con el sabor? <a href="https://litsalt.com/products/discovery-set">Prueba los 3 por <!--lp2:price disc-->4,99 €<!--/lp2--></a> y te lo descontamos de tu suscripción.</span></p>
-        <!--/lp2:if-->
+        {%- if s.discovery_show and lp2_disc_p != blank -%}
+        <p class="lp2-discovery"><img src="{{ lp2_disc_p.featured_image | image_url: width: 120 }}" width="600" height="782" alt="" loading="lazy"><span>¿Dudas con el sabor? <a href="{{ lp2_disc_p.url }}">Prueba los 3 por {% render 'nw-lp2-price', cents: lp2_disc %}</a> y te lo descontamos de tu suscripción.</span></p>
+        {%- endif -%}
 
         <p class="lp2-cfg__desc" data-lp2-box-note>Cada caja incluye 30 sobres de 3,5 g. LIT Daily Hydration es una mezcla esencial de electrolitos que ayuda a combatir la fatiga, mejorar la concentración y mantener una hidratación constante a lo largo del día.</p>
 
@@ -740,7 +672,7 @@
     <span class="lp2-bg-logo lp2-bg-logo--vs" aria-hidden="true"><svg viewBox="0 0 70 53"><use href="#lp2-lit-logo"/></svg></span>
     <div class="lp2-wrap lp2-vs__grid">
       <figure class="lp2-vs__photo">
-        <img src="assets/img/gafas-1600.webp" srcset="assets/img/gafas-800.webp 800w, assets/img/gafas-1600.webp 1600w" sizes="(max-width: 1023px) 100vw, 40vw" alt="Nadadora con gafas recién salida del agua" loading="lazy" data-lp2-parallax>
+        <img src="https://cdn.shopify.com/s/files/1/0896/3319/4288/files/nw-home-momentos-portrait.webp?width=1600" srcset="https://cdn.shopify.com/s/files/1/0896/3319/4288/files/nw-home-momentos-portrait.webp?width=800 800w, https://cdn.shopify.com/s/files/1/0896/3319/4288/files/nw-home-momentos-portrait.webp?width=1600 1600w" sizes="(max-width: 1023px) 100vw, 40vw" alt="Nadadora con gafas recién salida del agua" loading="lazy" data-lp2-parallax>
         <figcaption>3,5 g en 500 ml de agua<span>Una porción. Tres minerales. Cero azúcar.</span></figcaption>
       </figure>
       <div class="lp2-vs__body">
@@ -756,9 +688,9 @@
             <thead>
               <tr>
                 <th scope="col"><span class="lp2-vh">Característica</span></th>
-                <th scope="col" class="lp2-is-lit"><span class="lp2-vs__fan" aria-hidden="true"><img src="assets/img/sobre-watermelon.webp" alt=""><img src="assets/img/sobre-lemon.webp" alt=""><img src="assets/img/sobre-peach.webp" alt=""></span>LIT</th>
-                <th scope="col"><img class="lp2-vs__ico" src="assets/img/bottle-iso.svg" width="28" height="91" alt="">Isotónica azucarada</th>
-                <th scope="col"><img class="lp2-vs__ico" src="assets/img/bottle-elec.svg" width="34" height="89" alt="">Otros electrolitos</th>
+                <th scope="col" class="lp2-is-lit"><span class="lp2-vs__fan" aria-hidden="true"><img src="{{ 'nw-lp2-sobre-watermelon.webp' | asset_url }}" alt=""><img src="{{ 'nw-lp2-sobre-lemon.webp' | asset_url }}" alt=""><img src="{{ 'nw-lp2-sobre-peach.webp' | asset_url }}" alt=""></span>LIT</th>
+                <th scope="col"><img class="lp2-vs__ico" src="{{ 'nw-lp2-bottle-iso.svg' | asset_url }}" width="28" height="91" alt="">Isotónica azucarada</th>
+                <th scope="col"><img class="lp2-vs__ico" src="{{ 'nw-lp2-bottle-elec.svg' | asset_url }}" width="34" height="89" alt="">Otros electrolitos</th>
               </tr>
             </thead>
             <tbody>
@@ -770,7 +702,7 @@
               <tr><th scope="row">Sin colorantes artificiales</th><td class="lp2-is-lit"><span class="lp2-vs__yes"><svg aria-hidden="true"><use href="#lp2-i-check"/></svg></span><span class="lp2-vh">Sí</span></td><td><span class="lp2-vs__no"><svg aria-hidden="true"><use href="#lp2-i-dash"/></svg></span><span class="lp2-vh">No</span></td><td><span class="lp2-vs__no"><svg aria-hidden="true"><use href="#lp2-i-dash"/></svg></span><span class="lp2-vh">No</span></td></tr>
               <tr><th scope="row">Sin conservantes sintéticos</th><td class="lp2-is-lit"><span class="lp2-vs__yes"><svg aria-hidden="true"><use href="#lp2-i-check"/></svg></span><span class="lp2-vh">Sí</span></td><td><span class="lp2-vs__no"><svg aria-hidden="true"><use href="#lp2-i-dash"/></svg></span><span class="lp2-vh">No</span></td><td><span class="lp2-vs__no"><svg aria-hidden="true"><use href="#lp2-i-dash"/></svg></span><span class="lp2-vh">No</span></td></tr>
               <tr><th scope="row">Sin microplásticos</th><td class="lp2-is-lit"><span class="lp2-vs__yes"><svg aria-hidden="true"><use href="#lp2-i-check"/></svg></span><span class="lp2-vh">Sí</span></td><td><span class="lp2-vs__no"><svg aria-hidden="true"><use href="#lp2-i-dash"/></svg></span><span class="lp2-vh">No</span></td><td><span class="lp2-vs__no"><svg aria-hidden="true"><use href="#lp2-i-dash"/></svg></span><span class="lp2-vh">No</span></td></tr>
-              <tr><th scope="row">Coste / unidad</th><td class="lp2-is-lit">desde <!--lp2:price from_per-->0,71 €<!--/lp2--></td><td>2 €</td><td>3,85 €</td></tr>
+              <tr><th scope="row">Coste / unidad</th><td class="lp2-is-lit">desde {% render 'nw-lp2-price', cents: lp2_from_per %}</td><td>2 €</td><td>3,85 €</td></tr>
               <tr><th scope="row">Calorías</th><td class="lp2-is-lit">7</td><td>90</td><td>130</td></tr>
               <tr><th scope="row">Hecho en España</th><td class="lp2-is-lit"><span class="lp2-vs__yes"><svg aria-hidden="true"><use href="#lp2-i-check"/></svg></span><span class="lp2-vh">Sí</span></td><td><span class="lp2-vs__no"><svg aria-hidden="true"><use href="#lp2-i-dash"/></svg></span><span class="lp2-vh">No</span></td><td><span class="lp2-vs__no"><svg aria-hidden="true"><use href="#lp2-i-dash"/></svg></span><span class="lp2-vh">No</span></td></tr>
             </tbody>
@@ -778,7 +710,7 @@
         </div>
         <div class="lp2-vs__foot">
           <a class="lp2-btn" href="#ficha">Probar LIT <svg class="lp2-btn__arrow" aria-hidden="true"><use href="#lp2-i-arrow"/></svg></a>
-          <p>Desde <!--lp2:price from_per-->0,71 €<!--/lp2-->/sobre con suscripción</p>
+          <p>Desde {% render 'nw-lp2-price', cents: lp2_from_per %}/sobre con suscripción</p>
         </div>
       </div>
     </div>
@@ -796,19 +728,19 @@
       </header>
       <ol class="lp2-day__list">
         <li class="lp2-moment lp2-moment--1" data-lp2-rise>
-          <figure class="lp2-moment__media"><img src="assets/img/vaso.webp" srcset="assets/img/vaso-600.webp 600w, assets/img/vaso.webp 1200w" sizes="(max-width: 899px) 74vw, 25vw" alt="Sobre de LIT vertiéndose en un vaso de agua con limón" loading="lazy" data-lp2-parallax></figure>
+          <figure class="lp2-moment__media"><img src="https://cdn.shopify.com/s/files/1/0896/3319/4288/files/Lit-64029_1.png?width=1200" srcset="https://cdn.shopify.com/s/files/1/0896/3319/4288/files/Lit-64029_1.png?width=600 600w, https://cdn.shopify.com/s/files/1/0896/3319/4288/files/Lit-64029_1.png?width=1200 1200w" sizes="(max-width: 899px) 74vw, 25vw" alt="Sobre de LIT vertiéndose en un vaso de agua con limón" loading="lazy" data-lp2-parallax></figure>
           <div class="lp2-moment__body"><h3 class="lp2-moment__title">Al despertar, para empezar el día<small>No rompe el ayuno</small></h3></div>
         </li>
         <li class="lp2-moment lp2-moment--2" data-lp2-rise>
-          <figure class="lp2-moment__media"><img src="assets/img/m-ciclista.webp" srcset="assets/img/m-ciclista-600.webp 600w, assets/img/m-ciclista.webp 763w" sizes="(max-width: 899px) 74vw, 25vw" alt="Ciclista bebiendo de un bidón de LIT" loading="lazy" data-lp2-parallax></figure>
+          <figure class="lp2-moment__media"><img src="https://cdn.shopify.com/s/files/1/0896/3319/4288/files/nw-home-rutina-0700.webp?width=763" srcset="https://cdn.shopify.com/s/files/1/0896/3319/4288/files/nw-home-rutina-0700.webp?width=600 600w, https://cdn.shopify.com/s/files/1/0896/3319/4288/files/nw-home-rutina-0700.webp?width=763 763w" sizes="(max-width: 899px) 74vw, 25vw" alt="Ciclista bebiendo de un bidón de LIT" loading="lazy" data-lp2-parallax></figure>
           <div class="lp2-moment__body"><h3 class="lp2-moment__title">Antes, durante o después de entrenar</h3></div>
         </li>
         <li class="lp2-moment lp2-moment--3" data-lp2-rise>
-          <figure class="lp2-moment__media"><img src="assets/img/m-jornada.webp" srcset="assets/img/m-jornada-600.webp 600w, assets/img/m-jornada.webp 760w" sizes="(max-width: 899px) 74vw, 25vw" alt="Hombre con traje caminando por la ciudad" loading="lazy" data-lp2-parallax></figure>
+          <figure class="lp2-moment__media"><img src="https://cdn.shopify.com/s/files/1/0896/3319/4288/files/Kiko.png?width=760" srcset="https://cdn.shopify.com/s/files/1/0896/3319/4288/files/Kiko.png?width=600 600w, https://cdn.shopify.com/s/files/1/0896/3319/4288/files/Kiko.png?width=760 760w" sizes="(max-width: 899px) 74vw, 25vw" alt="Hombre con traje caminando por la ciudad" loading="lazy" data-lp2-parallax></figure>
           <div class="lp2-moment__body"><h3 class="lp2-moment__title">Durante jornadas largas, calurosas o exigentes</h3></div>
         </li>
         <li class="lp2-moment lp2-moment--4" data-lp2-rise>
-          <figure class="lp2-moment__media"><img src="assets/img/m-noche.webp" srcset="assets/img/m-noche-600.webp 600w, assets/img/m-noche.webp 1000w" sizes="(max-width: 899px) 74vw, 25vw" alt="Amigos jugando a las cartas con LIT en la mesa" loading="lazy" data-lp2-parallax></figure>
+          <figure class="lp2-moment__media"><img src="https://cdn.shopify.com/s/files/1/0896/3319/4288/files/DSCF4729_copy_cropped.jpg?width=1000" srcset="https://cdn.shopify.com/s/files/1/0896/3319/4288/files/DSCF4729_copy_cropped.jpg?width=600 600w, https://cdn.shopify.com/s/files/1/0896/3319/4288/files/DSCF4729_copy_cropped.jpg?width=1000 1000w" sizes="(max-width: 899px) 74vw, 25vw" alt="Amigos jugando a las cartas con LIT en la mesa" loading="lazy" data-lp2-parallax></figure>
           <div class="lp2-moment__body"><h3 class="lp2-moment__title">Después de una noche intensa</h3></div>
         </li>
       </ol>
@@ -818,8 +750,8 @@
   <!-- 8b · Banda cinética -->
   <div class="lp2-kine lp2-on-dark lp2-grain" aria-hidden="true">
     <div class="lp2-kine__row" data-lp2-kine="-1">
-      <span>Pour it.</span><img src="assets/img/sobre-lemon-h.webp" width="360" height="160" alt=""><span>Mix it.</span><img src="assets/img/sobre-watermelon-h.webp" width="360" height="165" alt=""><span>Get LIT.</span><img src="assets/img/sobre-peach-h.webp" width="360" height="159" alt="">
-      <span>Pour it.</span><img src="assets/img/sobre-lemon-h.webp" width="360" height="160" alt=""><span>Mix it.</span><img src="assets/img/sobre-watermelon-h.webp" width="360" height="165" alt=""><span>Get LIT.</span><img src="assets/img/sobre-peach-h.webp" width="360" height="159" alt="">
+      <span>Pour it.</span><img src="{{ 'nw-lp2-sobre-lemon-h.webp' | asset_url }}" width="360" height="160" alt=""><span>Mix it.</span><img src="{{ 'nw-lp2-sobre-watermelon-h.webp' | asset_url }}" width="360" height="165" alt=""><span>Get LIT.</span><img src="{{ 'nw-lp2-sobre-peach-h.webp' | asset_url }}" width="360" height="159" alt="">
+      <span>Pour it.</span><img src="{{ 'nw-lp2-sobre-lemon-h.webp' | asset_url }}" width="360" height="160" alt=""><span>Mix it.</span><img src="{{ 'nw-lp2-sobre-watermelon-h.webp' | asset_url }}" width="360" height="165" alt=""><span>Get LIT.</span><img src="{{ 'nw-lp2-sobre-peach-h.webp' | asset_url }}" width="360" height="159" alt="">
     </div>
     <div class="lp2-kine__row lp2-kine__row--out" data-lp2-kine="1">
       <span>Salty Lemon</span><i></i><span>Salty Watermelon</span><i></i><span>Salty Peach</span><i></i>
@@ -829,11 +761,11 @@
 
   <!-- 9 · Cómo tomarlo -->
   <section class="lp2-how lp2-grain" aria-labelledby="lp2-how-title">
-    <img class="lp2-how__ghost" src="assets/img/sobre-back.webp" width="456" height="970" alt="" aria-hidden="true" loading="lazy">
+    <img class="lp2-how__ghost" src="{{ 'nw-lp2-sobre-back.webp' | asset_url }}" width="456" height="970" alt="" aria-hidden="true" loading="lazy">
     <div class="lp2-wrap lp2-how__grid">
       <div class="lp2-how__video" data-lp2-rise>
-        <img src="assets/img/como-poster-1600.webp" srcset="assets/img/como-poster-800.webp 800w, assets/img/como-poster-1600.webp 1400w" sizes="(max-width: 1023px) 100vw, 55vw" alt="" loading="lazy">
-        <video muted playsinline loop preload="none" data-lp2-how-video data-lp2-src="assets/video/como.mp4" aria-label="Vídeo: cómo preparar LIT en cuatro pasos"></video>
+        <img src="{{ 'nw-comotomarlo-poster.webp' | asset_url }}" sizes="(max-width: 1023px) 100vw, 55vw" alt="" loading="lazy">
+        <video muted playsinline loop preload="none" data-lp2-how-video data-lp2-src="{{ 'nw-comotomarlo-opt.mp4' | asset_url }}" aria-label="Vídeo: cómo preparar LIT en cuatro pasos"></video>
         <button class="lp2-media-toggle" type="button" aria-pressed="false" aria-label="Pausar vídeo" data-lp2-toggle-video="[data-lp2-how-video]">
           <svg class="lp2-i-pause" aria-hidden="true"><use href="#lp2-i-pause"/></svg>
           <svg class="lp2-i-play" aria-hidden="true"><use href="#lp2-i-play"/></svg>
@@ -861,17 +793,17 @@
         <h2 class="lp2-vh" id="lp2-news-title">Hablan de nosotros</h2>
         <blockquote class="lp2-news__quote">
           <p><span class="lp2-ln lp2-q-thin"><span class="lp2-ln__in">«¿Y si no estás</span></span><span class="lp2-ln lp2-q-thin"><span class="lp2-ln__in">cansado sino</span></span><span class="lp2-ln lp2-q-bold"><span class="lp2-ln__in">deshidratado?»</span></span></p>
-          <footer><img src="assets/img/press/elmundo.webp" alt="El Mundo" width="677" height="90"><span>sobre los fundadores de LIT</span></footer>
+          <footer><img src="{{ 'nw-lp2-press-elmundo.webp' | asset_url }}" alt="El Mundo" width="677" height="90"><span>sobre los fundadores de LIT</span></footer>
         </blockquote>
       </div>
       <div class="lp2-news__clips">
         <figure class="lp2-clip lp2-clip--a" data-lp2-clip>
-          <img src="assets/img/art-elmundo.webp" width="925" height="697" alt="Artículo de El Mundo: «Ni proteína ni creatina: los emprendedores tras el nuevo oro del wellness. ¿Y si no estás cansado sino deshidratado?». Andrés Blumer y Guillermo García-Muchacho, fundadores de LIT." loading="lazy">
-          <figcaption class="lp2-clip__src"><img src="assets/img/press/elmundo.webp" alt="" width="677" height="90"></figcaption>
+          <img src="https://cdn.shopify.com/s/files/1/0896/3319/4288/files/nw-pdp-prensa-elmundo_e7739468-38de-47be-9cfd-44e60ac35a0f.webp?width=925" width="925" height="697" alt="Artículo de El Mundo: «Ni proteína ni creatina: los emprendedores tras el nuevo oro del wellness. ¿Y si no estás cansado sino deshidratado?». Andrés Blumer y Guillermo García-Muchacho, fundadores de LIT." loading="lazy">
+          <figcaption class="lp2-clip__src"><img src="{{ 'nw-lp2-press-elmundo.webp' | asset_url }}" alt="" width="677" height="90"></figcaption>
         </figure>
         <figure class="lp2-clip lp2-clip--b" data-lp2-clip>
-          <img src="assets/img/art-menshealth.webp" width="925" height="697" alt="Artículo de Men's Health: «Andrés Blumer, experto en hidratación deportiva: los electrolitos nunca van a afectar tu rendimiento, solo lo va a mejorar»." loading="lazy">
-          <figcaption class="lp2-clip__src"><img src="assets/img/press/menshealth.webp" alt="" width="437" height="90"></figcaption>
+          <img src="https://cdn.shopify.com/s/files/1/0896/3319/4288/files/nw-pdp-prensa-menshealth_edcf0b82-b233-4dc3-85c5-aa7aff6f6701.webp?width=925" width="925" height="697" alt="Artículo de Men's Health: «Andrés Blumer, experto en hidratación deportiva: los electrolitos nunca van a afectar tu rendimiento, solo lo va a mejorar»." loading="lazy">
+          <figcaption class="lp2-clip__src"><img src="{{ 'nw-lp2-press-menshealth.webp' | asset_url }}" alt="" width="437" height="90"></figcaption>
         </figure>
       </div>
     </div>
@@ -880,7 +812,7 @@
   <!-- 11 · Ya lo han probado -->
   <section class="lp2-revs" aria-labelledby="lp2-revs-title">
     <div class="lp2-revs__band lp2-on-dark">
-      <img src="assets/img/salto-mar-1600.webp" srcset="assets/img/salto-mar-800.webp 800w, assets/img/salto-mar-1600.webp 1600w" sizes="100vw" alt="" loading="lazy" data-lp2-parallax="6">
+      <img src="https://cdn.shopify.com/s/files/1/0896/3319/4288/files/nw-home-reviews-coast.webp?width=1600" srcset="https://cdn.shopify.com/s/files/1/0896/3319/4288/files/nw-home-reviews-coast.webp?width=800 800w, https://cdn.shopify.com/s/files/1/0896/3319/4288/files/nw-home-reviews-coast.webp?width=1600 1600w" sizes="100vw" alt="" loading="lazy" data-lp2-parallax="6">
       <div class="lp2-wrap">
         <h2 class="lp2-h2" id="lp2-revs-title">
           <span class="lp2-ln lp2-ln--thin"><span class="lp2-ln__in">Ya lo han</span></span>
@@ -911,7 +843,7 @@
 
   <!-- 12 · FAQ -->
   <section class="lp2-faq lp2-on-dark lp2-grain" aria-labelledby="lp2-faq-title">
-    <div class="lp2-bg-photo lp2-bg-photo--faq" aria-hidden="true"><img src="assets/img/runners-hierba-1600.webp" srcset="assets/img/runners-hierba-800.webp 800w, assets/img/runners-hierba-1600.webp 1600w" sizes="100vw" alt="" loading="lazy" data-lp2-parallax="8"></div>
+    <div class="lp2-bg-photo lp2-bg-photo--faq" aria-hidden="true"><img src="https://cdn.shopify.com/s/files/1/0896/3319/4288/files/nw-about-hero-runners_ddaf8ba4-2e5b-4840-8392-b32eb2568135.webp?width=1600" srcset="https://cdn.shopify.com/s/files/1/0896/3319/4288/files/nw-about-hero-runners_ddaf8ba4-2e5b-4840-8392-b32eb2568135.webp?width=800 800w, https://cdn.shopify.com/s/files/1/0896/3319/4288/files/nw-about-hero-runners_ddaf8ba4-2e5b-4840-8392-b32eb2568135.webp?width=1600 1600w" sizes="100vw" alt="" loading="lazy" data-lp2-parallax="8"></div>
     <div class="lp2-wrap lp2-faq__grid">
       <div class="lp2-faq__aside">
         <h2 class="lp2-h2" id="lp2-faq-title">
@@ -951,7 +883,7 @@
 
   <!-- 13 · Cierre -->
   <section class="lp2-end lp2-on-dark" aria-labelledby="lp2-end-title">
-    <div class="lp2-end__bg" data-lp2-end-bg><img src="assets/img/salto-cielo-1600.webp" srcset="assets/img/salto-cielo-800.webp 800w, assets/img/salto-cielo-1600.webp 1600w" sizes="100vw" alt="" loading="lazy"></div>
+    <div class="lp2-end__bg" data-lp2-end-bg><img src="https://cdn.shopify.com/s/files/1/0896/3319/4288/files/nw-about-ciencia-athlete.webp?width=1600" srcset="https://cdn.shopify.com/s/files/1/0896/3319/4288/files/nw-about-ciencia-athlete.webp?width=800 800w, https://cdn.shopify.com/s/files/1/0896/3319/4288/files/nw-about-ciencia-athlete.webp?width=1600 1600w" sizes="100vw" alt="" loading="lazy"></div>
     <div class="lp2-wrap lp2-end__inner">
       <h2 class="lp2-h2" id="lp2-end-title">
         <span class="lp2-ln lp2-ln--thin"><span class="lp2-ln__in">Únete a los que</span></span>
@@ -961,7 +893,7 @@
       <div class="lp2-end__cta">
         <a class="lp2-btn lp2-btn--lg" href="#ficha">Probar LIT <svg class="lp2-btn__arrow" aria-hidden="true"><use href="#lp2-i-arrow"/></svg></a>
         <ul class="lp2-end__chips">
-          <li>Desde <!--lp2:price from_per-->0,71 €<!--/lp2-->/sobre</li>
+          <li>Desde {% render 'nw-lp2-price', cents: lp2_from_per %}/sobre</li>
           <li>Envío gratis con suscripción</li>
           <li>Cancela cuando quieras</li>
         </ul>
@@ -969,10 +901,10 @@
       <footer class="lp2-legal">
         <p>© 2026 LIT · Hecho en España</p>
         <ul>
-          <li><a href="https://litsalt.com/policies/terms-of-service">Términos</a></li>
-          <li><a href="https://litsalt.com/policies/privacy-policy">Privacidad</a></li>
-          <li><a href="https://litsalt.com/policies/refund-policy">Devoluciones</a></li>
-          <li><a href="https://litsalt.com/policies/subscription-policy">Suscripción</a></li>
+          <li><a href="/policies/terms-of-service">Términos</a></li>
+          <li><a href="/policies/privacy-policy">Privacidad</a></li>
+          <li><a href="/policies/refund-policy">Devoluciones</a></li>
+          <li><a href="/policies/subscription-policy">Suscripción</a></li>
         </ul>
       </footer>
     </div>
@@ -982,18 +914,110 @@
 <!-- Barra fija de compra -->
 <div class="lp2-stick lp2-on-dark" data-lp2-stick aria-hidden="true">
   <div class="lp2-stick__in">
-    <img class="lp2-stick__thumb" data-lp2-stick-thumb src="assets/img/sobre-lemon.webp" width="336" height="769" alt="">
+    <img class="lp2-stick__thumb" data-lp2-stick-thumb src="{{ 'nw-lp2-sobre-lemon.webp' | asset_url }}" width="336" height="769" alt="">
     <div class="lp2-stick__info">
       <p class="lp2-stick__name">LIT Hidratación Diaria</p>
-      <p class="lp2-stick__meta"><span class="lp2-stick__stars" aria-hidden="true">★★★★★</span> Desde <b><!--lp2:price from_per-->0,71 €<!--/lp2--></b>/sobre</p>
+      <p class="lp2-stick__meta"><span class="lp2-stick__stars" aria-hidden="true">★★★★★</span> Desde <b>{% render 'nw-lp2-price', cents: lp2_from_per %}</b>/sobre</p>
     </div>
     <a class="lp2-btn" href="#ficha" tabindex="-1">Probar LIT</a>
   </div>
 </div>
 
-<script src="assets/js/vendor/gsap.min.js" defer></script>
-<script src="assets/js/vendor/ScrollTrigger.min.js" defer></script>
-<script src="assets/js/landing.js" defer></script>
+<script src="{{ 'nw-lp2-gsap.min.js' | asset_url }}" defer></script>
+<script src="{{ 'nw-lp2-scrolltrigger.min.js' | asset_url }}" defer></script>
+<script src="{{ 'nw-lp2.js' | asset_url }}" defer></script>
 </div>
-</body>
-</html>
+
+{% schema %}
+{
+  "name": "LIT · Landing v2",
+  "class": "nw-lp2-section",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Barra superior (promo)"
+    },
+    {
+      "type": "checkbox",
+      "id": "promo_show",
+      "label": "Mostrar la barra promo",
+      "default": true
+    },
+    {
+      "type": "inline_richtext",
+      "id": "promo_text",
+      "label": "Texto en ordenador",
+      "default": "<strong>Hasta el 15/10 · LIT × Biotherm:</strong> muestra gratis de Electrolyte Nutri Cream con tu pedido"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "promo_text_mobile",
+      "label": "Texto en móvil",
+      "default": "<strong>Hasta el 15/10:</strong> muestra gratis Biotherm con tu pedido"
+    },
+    {
+      "type": "header",
+      "content": "Productos de la caja de compra"
+    },
+    {
+      "type": "paragraph",
+      "content": "Precios, variantes y galería salen de estos productos. La plantilla ya trae los de LIT."
+    },
+    {
+      "type": "product",
+      "id": "p_sub_lemon",
+      "label": "Salty Lemon · suscripción"
+    },
+    {
+      "type": "product",
+      "id": "p_sub_watermelon",
+      "label": "Salty Watermelon · suscripción"
+    },
+    {
+      "type": "product",
+      "id": "p_sub_peach",
+      "label": "Salty Peach · suscripción"
+    },
+    {
+      "type": "product",
+      "id": "p_ot_lemon",
+      "label": "Salty Lemon · compra única"
+    },
+    {
+      "type": "product",
+      "id": "p_ot_watermelon",
+      "label": "Salty Watermelon · compra única"
+    },
+    {
+      "type": "product",
+      "id": "p_ot_peach",
+      "label": "Salty Peach · compra única"
+    },
+    {
+      "type": "product",
+      "id": "p_pack_sub",
+      "label": "Pack 4 cajas · suscripción"
+    },
+    {
+      "type": "product",
+      "id": "p_pack_ot",
+      "label": "Pack 4 cajas · compra única"
+    },
+    {
+      "type": "header",
+      "content": "Discovery Set"
+    },
+    {
+      "type": "checkbox",
+      "id": "discovery_show",
+      "label": "Mostrar el enlace bajo el botón de compra",
+      "default": true
+    },
+    {
+      "type": "product",
+      "id": "p_discovery",
+      "label": "Producto Discovery Set"
+    }
+  ]
+}
+{% endschema %}
