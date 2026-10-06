@@ -119,7 +119,7 @@
       }
     }
     return {
-      set(str) {
+      set(str, animate = true) {
         const s = [...str].map((ch) => (isDigit(ch) ? 'd' : ch)).join('');
         const rebuilt = s !== sig;
         if (rebuilt) { build(str); sig = s; }
@@ -128,7 +128,8 @@
         for (const ch of str) {
           if (!isDigit(ch)) continue;
           const st = strips[i++];
-          if (rebuilt && !RM) { st.style.transition = 'none'; st.style.transform = 'translateY(0)'; void st.offsetHeight; st.style.transition = ''; }
+          if (!animate || RM) { st.style.transition = 'none'; st.style.transform = `translateY(${-Number(ch) * 1.2}em)`; void st.offsetHeight; st.style.transition = ''; continue; }
+          if (rebuilt) { st.style.transition = 'none'; st.style.transform = 'translateY(0)'; void st.offsetHeight; st.style.transition = ''; }
           st.style.transform = `translateY(${-Number(ch) * 1.2}em)`;
         }
       },
@@ -141,13 +142,18 @@
   function initBuy() {
     const cfg = $('.cfg');
     if (!cfg) return;
-    const state = { flavor: 'lemon', pack: 1, plan: 'sub', qty: 1, slots: ['lemon', 'lemon', 'lemon', 'lemon'], freqTouched: false, gi: 0 };
+    // Tres ofertas como en la versión B: suscripción 1 caja, suscripción 3+1, compra única
+    const OFFERS = {
+      sub1: { pack: 1, plan: 'sub' },
+      sub4: { pack: 4, plan: 'sub' },
+      ot1: { pack: 1, plan: 'ot' },
+    };
+    const state = { flavor: 'lemon', offer: 'sub1', qty: 1, slots: ['lemon', 'lemon', 'lemon', 'lemon'], gi: 0 };
 
     const form = $('[data-cart]');
     const fId = form.elements.id;
     const fQty = form.elements.quantity;
     const fPlan = form.elements.selling_plan;
-    const freq = $('[data-freq]');
     const odo = odometer($('[data-odo]'));
     const totalSr = $('[data-total-sr]');
     const qtyOut = $('[data-qty-out]');
@@ -157,6 +163,9 @@
     const mixSummary = $('[data-mix-summary]');
     const mixBoxes = $$('[data-mix-boxes] i');
     const stickThumb = $('[data-stick-thumb]');
+    const cfgThumb = $('[data-cfg-thumb]');
+    const freqs = { sub1: $('[data-freq="sub1"]'), sub4: $('[data-freq="sub4"]') };
+    let firstRender = true;
 
     // Ranuras del pack (4 cajas)
     SLOT_NAMES.forEach((label, si) => {
@@ -170,21 +179,24 @@
       mixSlots.appendChild(fs);
     });
 
+    const offer = () => OFFERS[state.offer];
     const variant = () => {
-      if (state.pack === 1) return FLAVORS[state.flavor][state.plan];
+      const o = offer();
+      if (o.pack === 1) return FLAVORS[state.flavor][o.plan];
       const c = { lemon: 0, watermelon: 0, peach: 0 };
       state.slots.forEach((s) => c[s]++);
-      return PACK[state.plan][`${c.lemon}-${c.watermelon}-${c.peach}`];
+      return PACK[o.plan][`${c.lemon}-${c.watermelon}-${c.peach}`];
     };
 
     function render() {
       const f = FLAVORS[state.flavor];
-      const P = PRICES[state.pack];
+      const o = offer();
       $$('[data-flavor-name]').forEach((el) => { el.textContent = f.name; });
       $('[data-gal-badge]').style.setProperty('--flavor', f.color);
+      $$('[data-offer]').forEach((el) => el.classList.toggle('is-on', el.dataset.offer === state.offer));
 
-      // Pack
-      mix.hidden = state.pack !== 4;
+      // Pack 3+1: mezcla de sabores
+      mix.hidden = o.pack !== 4;
       const counts = {};
       state.slots.forEach((s) => { counts[s] = (counts[s] || 0) + 1; });
       const keys = Object.keys(counts);
@@ -194,54 +206,52 @@
       mixBoxes.forEach((b, i) => b.style.setProperty('--c', FLAVORS[state.slots[i]].color));
       state.slots.forEach((s, i) => { const r = $(`input[name="slot${i}"][value="${s}"]`); if (r) r.checked = true; });
 
-      // Precios por opción
-      $('[data-price-sub]').textContent = fmt(P.sub.now);
-      $('[data-was-sub]').textContent = fmt(P.sub.was);
-      $('[data-per-sub]').textContent = `${perSachet(P.sub.now, UNITS[state.pack])}/sobre`;
-      $('[data-price-ot]').textContent = fmt(P.ot.now);
-      $('[data-per-ot]').textContent = `${perSachet(P.ot.now, UNITS[state.pack])}/sobre`;
-      $('[data-save]').textContent = state.pack === 1 ? 'Ahorra 25 %' : `Ahorras ${fmt(P.sub.was - P.sub.now)}`;
-      [1, 4].forEach((p) => {
-        const el = $(`[data-per="${p}"]`);
-        el.innerHTML = `${perSachet(PRICES[p][state.plan].now, UNITS[p])} <small>/sobre</small>`;
-      });
-      $$('[data-plan]').forEach((el) => el.classList.toggle('is-on', el.dataset.plan === state.plan));
-
       // Textos que cambian con el pack o el sabor
-      $('[data-box-note]').textContent = state.pack === 1 ? TXT.note1 : TXT.note4;
-      $('[data-acc-details]').textContent = state.pack === 1 ? TXT.det1 : TXT.det4;
+      $('[data-box-note]').textContent = o.pack === 1 ? TXT.note1 : TXT.note4;
+      $('[data-acc-details]').textContent = o.pack === 1 ? TXT.det1 : TXT.det4;
       const ingr = $('[data-acc-ingr]');
-      if (state.pack === 1) ingr.textContent = TXT.ingr(f.aroma);
+      if (o.pack === 1) ingr.textContent = TXT.ingr(f.aroma);
       else ingr.innerHTML = ORDER.map((k) => `<p><strong>${FLAVORS[k].name}:</strong> ${TXT.ingr(FLAVORS[k].aroma)}</p>`).join('');
 
       // Total y formulario
-      const total = P[state.plan].now * state.qty;
-      odo.set(fmt(total));
+      const total = PRICES[o.pack][o.plan].now * state.qty;
+      odo.set(fmt(total), !firstRender);
+      firstRender = false;
       totalSr.textContent = fmt(total);
       qtyOut.textContent = state.qty;
       $('[data-qty="-1"]').disabled = state.qty <= 1;
       $('[data-qty="1"]').disabled = state.qty >= MAX_QTY;
       fId.value = variant();
       fQty.value = state.qty;
-      fPlan.disabled = state.plan !== 'sub';
-      fPlan.value = freq.value;
+      fPlan.disabled = o.plan !== 'sub';
+      if (o.plan === 'sub') fPlan.value = freqs[state.offer].value;
       if (stickThumb) stickThumb.src = f.sachet;
+      if (cfgThumb) cfgThumb.src = `${IMG}g-${state.flavor}-0-comp-t.webp`;
     }
 
+    const setFlavor = (value, withFlip = true) => {
+      state.flavor = value;
+      state.slots = [value, value, value, value];
+      const r = $(`input[name="flavor"][value="${value}"]`);
+      if (r) r.checked = true;
+      render();
+      gallery.reset(withFlip);
+    };
+
     // Eventos
-    $$('input[name="flavor"]').forEach((r) => r.addEventListener('change', () => {
-      state.flavor = r.value;
-      state.slots = [r.value, r.value, r.value, r.value];
-      render();
-      gallery.reset(true);
-    }));
-    $$('input[name="pack"]').forEach((r) => r.addEventListener('change', () => {
-      state.pack = Number(r.value);
-      if (!state.freqTouched) freq.value = DEFAULT_PLAN[state.pack];
-      render();
-    }));
-    $$('input[name="plan"]').forEach((r) => r.addEventListener('change', () => { state.plan = r.value; render(); }));
-    freq.addEventListener('change', () => { state.freqTouched = true; render(); });
+    $$('input[name="flavor"]').forEach((r) => r.addEventListener('change', () => setFlavor(r.value)));
+    $$('input[name="offer"]').forEach((r) => r.addEventListener('change', () => { state.offer = r.value; render(); }));
+    Object.entries(freqs).forEach(([key, sel]) => {
+      const pickOffer = () => {
+        if (state.offer === key) return;
+        const r = $(`input[name="offer"][value="${key}"]`);
+        r.checked = true;
+        state.offer = key;
+        render();
+      };
+      sel.addEventListener('focus', pickOffer);
+      sel.addEventListener('change', () => { pickOffer(); render(); });
+    });
     mixSlots.addEventListener('change', (e) => {
       const m = e.target.name && e.target.name.match(/^slot(\d)$/);
       if (!m) return;
@@ -266,6 +276,7 @@
       const flip = $('[data-gal-flip]');
       const img = $('[data-gal-img]');
       const thumbs = $('[data-gal-thumbs]');
+      const count = $('[data-gal-count]');
       const list = () => FLAVORS[state.flavor].gallery;
 
       function drawThumbs() {
@@ -281,6 +292,7 @@
         state.gi = (i + L.length) % L.length;
         const [file, alt] = L[state.gi];
         $$('.gal__thumb', thumbs).forEach((t, k) => t.setAttribute('aria-current', String(k === state.gi)));
+        if (count) count.textContent = `${state.gi + 1} / ${L.length}`;
         const swap = (src) => { img.src = src; img.alt = alt; };
         if (RM || !flip.animate) { load(file).then(swap); return; }
         if (mode === 'flip') {
@@ -289,13 +301,15 @@
             swap(src);
             flip.animate([{ transform: 'rotateY(-90deg)' }, { transform: 'rotateY(0deg)' }], { duration: 640, easing: 'cubic-bezier(.34,1.56,.64,1)', fill: 'forwards' });
           });
-        } else {
+        } else if (mode) {
           const dir = mode === 'prev' ? -1 : 1;
           const out = img.animate([{ opacity: 1, transform: 'translateX(0)' }, { opacity: 0, transform: `translateX(${-dir * 24}px)` }], { duration: 180, easing: 'ease-in', fill: 'forwards' });
           Promise.all([load(file), out.finished]).then(([src]) => {
             swap(src);
             img.animate([{ opacity: 0, transform: `translateX(${dir * 24}px)` }, { opacity: 1, transform: 'translateX(0)' }], { duration: 420, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'forwards' });
           });
+        } else {
+          load(file).then(swap);
         }
       }
       thumbs.addEventListener('click', (e) => {
@@ -322,7 +336,23 @@
     const warm = () => ORDER.forEach((k) => { const i = new Image(); i.src = `${IMG}${FLAVORS[k].gallery[0][0]}.webp`; });
     if ('requestIdleCallback' in window) requestIdleCallback(warm, { timeout: 4000 }); else setTimeout(warm, 2500);
 
+    // El bloque «Elige tu sabor» elige el sabor aquí y baja a la compra
+    window.__litPickFlavor = (value) => {
+      setFlavor(value, false);
+      const target = $('#ficha');
+      if (target) target.scrollIntoView({ behavior: RM ? 'auto' : 'smooth', block: 'start' });
+    };
+
     render();
+  }
+
+  /* ------------------------------------------------------------------
+     Elige tu sabor: pestañas y botones de elegir
+     ------------------------------------------------------------------ */
+  function initFlavPick() {
+    $$('[data-pick]').forEach((b) => b.addEventListener('click', () => {
+      if (window.__litPickFlavor) window.__litPickFlavor(b.dataset.pick);
+    }));
   }
 
   /* ------------------------------------------------------------------
@@ -473,6 +503,21 @@
     [heroBuy, buy, end].forEach((el) => el && io.observe(el));
   }
 
+  function flavState(i) {
+    $$('[data-flav-tab]').forEach((t, k) => t.setAttribute('aria-pressed', String(k === i)));
+  }
+  function initFlavTabs() {
+    $$('[data-flav-tab]').forEach((t) => t.addEventListener('click', () => {
+      const i = Number(t.dataset.flavTab);
+      if (window.__flavGo) { window.__flavGo(i); return; }
+      // Sin animación: cambio directo
+      $$('.flav__item').forEach((el, k) => { el.style.visibility = k === i ? 'visible' : 'hidden'; el.style.opacity = k === i ? '1' : '0'; });
+      $$('.flav__bg').forEach((el, k) => { el.style.opacity = k <= i ? '1' : '0'; });
+      $$('.flav__word').forEach((el, k) => { el.style.opacity = k === i ? '1' : '0'; });
+      flavState(i);
+    }));
+  }
+
   /* ------------------------------------------------------------------
      Movimiento (GSAP + ScrollTrigger)
      ------------------------------------------------------------------ */
@@ -547,6 +592,45 @@
       ScrollTrigger.batch('.mineral', { start: 'top 90%', once: true, onEnter: (b) => gsap.to(b, { opacity: 1, y: 0, duration: 1, ease: 'expo.out', stagger: 0.1 }) });
     });
 
+    // Elige tu sabor — escritorio: fijado; el fondo, la palabra y el producto cambian de sabor
+    mm.add('(min-width: 1024px)', () => {
+      const items = $$('.flav__item');
+      const bgs = $$('.flav__bg');
+      const words = $$('.flav__word');
+      if (items.length < 3) return undefined;
+      gsap.set(items.slice(1), { autoAlpha: 0, x: 70 });
+      gsap.set(bgs.slice(1), { opacity: 0 });
+      gsap.set(words.slice(1), { opacity: 0, xPercent: 6 });
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: '.flav', start: 'top top', end: '+=210%', pin: '.flav__pin', scrub: 0.8, anticipatePin: 1,
+          onUpdate: () => flavState(tl.time() < 1 ? 0 : tl.time() < 2 ? 1 : 2),
+        },
+      });
+      tl.fromTo($('.flav__sachet', items[0]), { rotate: 14, yPercent: 8 }, { rotate: -8, yPercent: 0, duration: 0.7, ease: 'power3.out' }, 0);
+      [1, 2].forEach((i) => {
+        tl.to(items[i - 1], { autoAlpha: 0, x: -70, duration: 0.45, ease: 'power2.in' }, i - 0.3)
+          .to(words[i - 1], { opacity: 0, xPercent: -6, duration: 0.45, ease: 'power2.in' }, i - 0.3)
+          .to(bgs[i], { opacity: 1, duration: 0.55, ease: 'none' }, i - 0.25)
+          .fromTo(items[i], { autoAlpha: 0, x: 70 }, { autoAlpha: 1, x: 0, duration: 0.6, ease: 'power3.out' }, i)
+          .fromTo(words[i], { opacity: 0, xPercent: 6 }, { opacity: 1, xPercent: 0, duration: 0.6, ease: 'power3.out' }, i)
+          .fromTo($('.flav__sachet', items[i]), { rotate: 22, yPercent: 10 }, { rotate: -8, yPercent: 0, duration: 0.8, ease: 'power3.out' }, i);
+      });
+      tl.to({}, { duration: 0.7 });
+      window.__flavGo = (i) => {
+        const st = tl.scrollTrigger;
+        const t = [0.4, 1.4, 2.4][i] / tl.duration();
+        window.scrollTo({ top: st.start + (st.end - st.start) * t, behavior: 'smooth' });
+      };
+      return () => { window.__flavGo = null; };
+    });
+
+    // Banda cinética: las dos filas se cruzan con el scroll
+    $$('[data-kine]').forEach((row) => {
+      const toLeft = Number(row.dataset.kine) < 0;
+      gsap.fromTo(row, { xPercent: toLeft ? 0 : -24 }, { xPercent: toLeft ? -24 : 0, ease: 'none', scrollTrigger: { trigger: '.kine', start: 'top bottom', end: 'bottom top', scrub: 0.6 } });
+    });
+
     // Datos: barras, segmentos y la mancuerna de fatiga
     const dataTl = gsap.timeline({ scrollTrigger: { trigger: '.data__grid', start: 'top 75%', once: true }, defaults: { ease: 'expo.out' } });
     dataTl
@@ -572,6 +656,8 @@
   }
 
   initBuy();
+  initFlavPick();
+  initFlavTabs();
   initToggles();
   initHeroVideo();
   initHow();
