@@ -1,0 +1,13 @@
+{%- comment -%}
+  nw-lp2-price · céntimos -> «28,35 €» (mismo formato que el JS de la landing, con espacio duro).
+  Uso: {% render 'nw-lp2-price', cents: variant.price %}
+{%- endcomment -%}
+{%- liquid
+  assign c = cents | default: 0 | round
+  assign e = c | divided_by: 100
+  assign d = c | modulo: 100
+  if d < 10
+    assign d = '0' | append: d
+  endif
+  echo e | append: ',' | append: d | append: '&nbsp;€'
+-%}
