@@ -41,7 +41,7 @@ Landing «No es cansancio, es deshidratación» lista para el tema de litsalt.co
 **Sale de los productos** (si cambian en Shopify, la landing cambia sola):
 - Variantes: suscripción de 1 caja (variante «30» de cada sabor), compra única de cada sabor y el pack de 4 cajas con sus 15 combinaciones de sabores (se leen del título de cada variante: «2 Salty Lemon + 1 Watermelon + 1 Peach»).
 - Precios y todo lo que se calcula con ellos: €/sobre, «Ahorra 25 %», «Ahorras 66,15 €», «Desde 0,71 €/sobre».
-- Galería: la composición nueva de caja + sobre y las fotos 2 a 7 de cada producto. La primera foto del producto se salta porque muestra el sobre anterior (1000 mg de sodio); si se cambia, quitar `offset: 1` en la sección.
+- Galería: la composición nueva de caja + sobre y, a continuación, las fotos 2 a 7 de cada producto (la composición ocupa el lugar de la primera). Para usar también la primera foto del producto, quitar `offset: 1` en la sección.
 - Discovery Set: precio, enlace y foto.
 
 **Fijo en la sección**:
