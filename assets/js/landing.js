@@ -503,19 +503,77 @@
     [heroBuy, buy, end].forEach((el) => el && io.observe(el));
   }
 
-  function flavState(i) {
-    $$('[data-flav-tab]').forEach((t, k) => t.setAttribute('aria-pressed', String(k === i)));
-  }
-  function initFlavTabs() {
-    $$('[data-flav-tab]').forEach((t) => t.addEventListener('click', () => {
-      const i = Number(t.dataset.flavTab);
-      if (window.__flavGo) { window.__flavGo(i); return; }
-      // Sin animación: cambio directo
-      $$('.flav__item').forEach((el, k) => { el.style.visibility = k === i ? 'visible' : 'hidden'; el.style.opacity = k === i ? '1' : '0'; });
-      $$('.flav__bg').forEach((el, k) => { el.style.opacity = k <= i ? '1' : '0'; });
-      $$('.flav__word').forEach((el, k) => { el.style.opacity = k === i ? '1' : '0'; });
-      flavState(i);
-    }));
+  /* ------------------------------------------------------------------
+     Elige tu sabor: se cambia con un clic (o con las flechas), no con el scroll
+     ------------------------------------------------------------------ */
+  function initFlav() {
+    const tabs = $$('[data-flav-tab]');
+    const items = $$('.flav__item');
+    const bgs = $$('.flav__bg');
+    const words = $$('.flav__word');
+    if (!tabs.length || items.length < 3) return;
+    let active = 0;
+    let z = 2;
+    const running = new Set();
+    const desk = () => matchMedia('(min-width: 1024px)').matches;
+    // Cada animación se limpia una sola vez: al terminar o cuando se cambia de sabor antes de tiempo
+    const anim = (el, frames, opts, done) => {
+      const a = el.animate(frames, opts);
+      const cleanup = () => {
+        if (!running.has(a)) return;
+        running.delete(a);
+        if (done) done();
+        a.cancel();
+      };
+      a.onfinish = cleanup;
+      a.cleanup = cleanup;
+      running.add(a);
+      return a;
+    };
+
+    function go(i) {
+      if (i === active) return;
+      [...running].forEach((a) => a.cleanup());
+      const prev = active;
+      active = i;
+      tabs.forEach((t, k) => t.setAttribute('aria-pressed', String(k === i)));
+      const settle = () => [items, bgs, words].forEach((list) => list.forEach((el, k) => el.classList.toggle('is-active', k === active)));
+      if (RM || !desk() || !items[i].animate) { settle(); return; }
+
+      // Fondo: el color nuevo entra por encima del anterior
+      z += 1;
+      bgs[i].style.zIndex = z;
+      bgs[i].classList.add('is-active');
+      anim(bgs[i], [{ opacity: 0 }, { opacity: 1 }], { duration: 650, easing: 'ease-out' }, () => {
+        bgs.forEach((b, k) => { if (k !== active) b.classList.remove('is-active'); });
+      });
+
+      // Palabra gigante de fondo
+      words[i].classList.add('is-active');
+      anim(words[prev], [{ opacity: 1, transform: 'translateX(0)' }, { opacity: 0, transform: 'translateX(-5%)' }], { duration: 340, easing: 'ease-in', fill: 'forwards' }, () => {
+        if (prev !== active) words[prev].classList.remove('is-active');
+      });
+      anim(words[i], [{ opacity: 0, transform: 'translateX(5%)' }, { opacity: 1, transform: 'translateX(0)' }], { duration: 700, delay: 120, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'backwards' });
+
+      // Producto, nombre y botón
+      items[i].classList.add('is-active');
+      anim(items[prev], [{ opacity: 1, transform: 'translateX(0)' }, { opacity: 0, transform: 'translateX(-56px)' }], { duration: 280, easing: 'cubic-bezier(.55,0,.8,.3)', fill: 'forwards' }, () => {
+        if (prev !== active) items[prev].classList.remove('is-active');
+      });
+      anim(items[i], [{ opacity: 0, transform: 'translateX(56px)' }, { opacity: 1, transform: 'translateX(0)' }], { duration: 720, delay: 250, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'backwards' });
+      anim($('.flav__sachet', items[i]), [{ transform: 'rotate(20deg) translateY(8%)' }, { transform: 'rotate(-8deg) translateY(0)' }], { duration: 900, delay: 280, easing: 'cubic-bezier(.34,1.56,.64,1)', fill: 'backwards' });
+    }
+
+    tabs.forEach((t, k) => {
+      t.addEventListener('click', () => go(k));
+      t.addEventListener('keydown', (e) => {
+        if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+        e.preventDefault();
+        const n = (k + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+        tabs[n].focus();
+        go(n);
+      });
+    });
   }
 
   /* ------------------------------------------------------------------
@@ -592,39 +650,6 @@
       ScrollTrigger.batch('.mineral', { start: 'top 90%', once: true, onEnter: (b) => gsap.to(b, { opacity: 1, y: 0, duration: 1, ease: 'expo.out', stagger: 0.1 }) });
     });
 
-    // Elige tu sabor — escritorio: fijado; el fondo, la palabra y el producto cambian de sabor
-    mm.add('(min-width: 1024px)', () => {
-      const items = $$('.flav__item');
-      const bgs = $$('.flav__bg');
-      const words = $$('.flav__word');
-      if (items.length < 3) return undefined;
-      gsap.set(items.slice(1), { autoAlpha: 0, x: 70 });
-      gsap.set(bgs.slice(1), { opacity: 0 });
-      gsap.set(words.slice(1), { opacity: 0, xPercent: 6 });
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: '.flav', start: 'top top', end: '+=210%', pin: '.flav__pin', scrub: 0.8, anticipatePin: 1,
-          onUpdate: () => flavState(tl.time() < 1 ? 0 : tl.time() < 2 ? 1 : 2),
-        },
-      });
-      tl.fromTo($('.flav__sachet', items[0]), { rotate: 14, yPercent: 8 }, { rotate: -8, yPercent: 0, duration: 0.7, ease: 'power3.out' }, 0);
-      [1, 2].forEach((i) => {
-        tl.to(items[i - 1], { autoAlpha: 0, x: -70, duration: 0.45, ease: 'power2.in' }, i - 0.3)
-          .to(words[i - 1], { opacity: 0, xPercent: -6, duration: 0.45, ease: 'power2.in' }, i - 0.3)
-          .to(bgs[i], { opacity: 1, duration: 0.55, ease: 'none' }, i - 0.25)
-          .fromTo(items[i], { autoAlpha: 0, x: 70 }, { autoAlpha: 1, x: 0, duration: 0.6, ease: 'power3.out' }, i)
-          .fromTo(words[i], { opacity: 0, xPercent: 6 }, { opacity: 1, xPercent: 0, duration: 0.6, ease: 'power3.out' }, i)
-          .fromTo($('.flav__sachet', items[i]), { rotate: 22, yPercent: 10 }, { rotate: -8, yPercent: 0, duration: 0.8, ease: 'power3.out' }, i);
-      });
-      tl.to({}, { duration: 0.7 });
-      window.__flavGo = (i) => {
-        const st = tl.scrollTrigger;
-        const t = [0.4, 1.4, 2.4][i] / tl.duration();
-        window.scrollTo({ top: st.start + (st.end - st.start) * t, behavior: 'smooth' });
-      };
-      return () => { window.__flavGo = null; };
-    });
-
     // Banda cinética: las dos filas se cruzan con el scroll
     $$('[data-kine]').forEach((row) => {
       const toLeft = Number(row.dataset.kine) < 0;
@@ -657,7 +682,7 @@
 
   initBuy();
   initFlavPick();
-  initFlavTabs();
+  initFlav();
   initToggles();
   initHeroVideo();
   initHow();
