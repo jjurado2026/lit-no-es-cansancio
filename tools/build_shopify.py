@@ -173,7 +173,7 @@ def flavor_json(key, short, name, color, aroma, p, v_sub, v_ot):
       "sachet": {{{{ 'nw-lp2-sobre-{key}.webp' | asset_url | json }}}},
       "gallery": [
         {{"src": {{{{ 'nw-lp2-g-{key}-0-comp.webp' | asset_url | json }}}}, "thumb": {{{{ 'nw-lp2-g-{key}-0-comp-t.webp' | asset_url | json }}}}, "alt": "Caja y sobre de LIT {name}"}}
-        {{%- comment -%}} La 1.ª foto del producto muestra el sobre anterior (1000 mg de sodio): se salta {{%- endcomment -%}}
+        {{%- comment -%}} La composición nueva ocupa el lugar de la 1.ª foto del producto; siguen las fotos 2 a 7 {{%- endcomment -%}}
         {{%- for img in {p}.images offset: 1 limit: 6 -%}}
           ,{{"src": {{{{ img | image_url: width: 1000 | json }}}}, "thumb": {{{{ img | image_url: width: 260 | json }}}}, "alt": {{{{ lp2_alts[forloop.index0] | replace: '{{n}}', '{name}' | json }}}}}}
         {{%- endfor %}}
